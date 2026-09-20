@@ -27,7 +27,7 @@ import {
   Textarea,
   Bucket,
   Pager,
-  SortPills,
+  Segmented,
   isAgent,
 } from "@/design/ui";
 import { Icon } from "@/design/icons";
@@ -72,6 +72,16 @@ function metaString(meta: Record<string, unknown> | undefined, keys: string[]): 
  * thing that tells them apart, so name it after them and keep the id in the
  * line underneath, where it is still there to copy.
  */
+type ConvFilter = "all" | "unread" | "reading";
+
+/** "Read" means Amòye has drawn something from the thread. A thread it has
+ *  not reached yet is the one worth finding. */
+const CONV_FILTERS: Array<[ConvFilter, string]> = [
+  ["all", "All"],
+  ["unread", "Not yet read"],
+  ["reading", "Being read now"],
+];
+
 function subjectOf(s: Session, people?: Peer[]): string {
   const stated = metaString(s.metadata, ["title", "subject", "name", "summary", "topic"]);
   if (stated) return stated;
@@ -303,7 +313,7 @@ export function Conversations() {
 
   const [q, setQ] = React.useState("");
   const [page, setPage] = React.useState(1);
-  const [newestFirst, setNewestFirst] = React.useState(true);
+  const [convFilter, setConvFilter] = React.useState<ConvFilter>("all");
   const [composing, setComposing] = React.useState(false);
 
   const searching = q.trim().length > 0;
@@ -318,25 +328,33 @@ export function Conversations() {
         "POST",
         `/v3/workspaces/${encodeURIComponent(workspace)}/sessions/list`,
         {},
-        { query: { page: wanted, size, reverse: reverseFor("sessions", newestFirst) } },
+        { query: { page: wanted, size, reverse: reverseFor("sessions", true) } },
       ),
-    [workspace, wanted, size, newestFirst],
+    [workspace, wanted, size],
   );
 
   const all = React.useMemo(() => asList<Session>(listed.data), [listed.data]);
   const total = listed.data?.total;
   const pages = listed.data?.pages ?? 1;
 
+  // Participants and reading state are what the filters below test, so they
+  // are resolved for the whole page before it is filtered — deriving them
+  // from the filtered rows would make the filter depend on its own result.
+  const people = usePeople(all.slice(0, 40), workspace);
+  const reading = useReading(workspace);
+
   const rows = React.useMemo(() => {
     const needle = q.trim().toLowerCase();
-    if (!needle) return all;
-    return all.filter((s) =>
-      `${s.id} ${subjectOf(s, people[s.id])}`.toLowerCase().includes(needle),
-    );
-  }, [all, q]);
-
-  const people = usePeople(rows.slice(0, 40), workspace);
-  const reading = useReading(workspace);
+    const matches = (s: Session) =>
+      !needle || `${s.id} ${subjectOf(s, people[s.id])}`.toLowerCase().includes(needle);
+    const inFilter = (s: Session) => {
+      if (convFilter === "reading") return reading[s.id] === true;
+      // Not yet read: nothing has been drawn from it and it is not in hand.
+      if (convFilter === "unread") return !reading[s.id] && (people[s.id]?.length ?? 0) === 0;
+      return true;
+    };
+    return all.filter((s) => matches(s) && inFilter(s));
+  }, [all, q, people, reading, convFilter]);
 
   const open = (id: string) => navigate(`/conversations/${encodeURIComponent(id)}`);
 
@@ -396,7 +414,12 @@ export function Conversations() {
 
       {!searching && (
         <div className="mb-3.5 flex flex-wrap items-center gap-2.5">
-          <SortPills newestFirst={newestFirst} onChange={(v) => { setNewestFirst(v); setPage(1); }} />
+          <Segmented
+            options={CONV_FILTERS}
+            value={convFilter}
+            onChange={(v) => { setConvFilter(v); setPage(1); }}
+            label="Filter"
+          />
           <span className="mono ml-auto text-[11.5px] text-ink3">
             {rows.length > 0 ? `showing ${num(rows.length)}` : ""}
           </span>

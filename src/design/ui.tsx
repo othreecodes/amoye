@@ -656,6 +656,47 @@ export function SortPills({
   );
 }
 
+/** A row of mutually exclusive choices. One is always on, so it states the
+ *  current view rather than offering a switch that might be off. */
+export function Segmented<T extends string>({
+  options, value, onChange, label, subtle = false,
+}: {
+  options: ReadonlyArray<readonly [T, string]>;
+  value: T;
+  onChange: (v: T) => void;
+  label: string;
+  subtle?: boolean;
+}) {
+  return (
+    <div className="flex flex-wrap items-center gap-1.5" role="group" aria-label={label}>
+      {options.map(([key, text]) => {
+        const on = key === value;
+        return (
+          <button
+            key={key}
+            type="button"
+            onClick={() => onChange(key)}
+            aria-pressed={on}
+            className={cn(
+              "cursor-pointer whitespace-nowrap rounded-[20px] border px-3 py-1.5 text-[12.5px] transition-colors",
+              !on && "hover:text-ink",
+            )}
+            style={
+              on
+                ? subtle
+                  ? { background: "var(--panel2)", color: "var(--ink)", borderColor: "var(--line2)" }
+                  : { background: "var(--ink)", color: "var(--bg)", borderColor: "var(--ink)" }
+                : { background: "transparent", color: "var(--ink3)", borderColor: "var(--line)" }
+            }
+          >
+            {text}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
 export function Empty({
   headline, hint, action, art,
 }: { headline: string; hint?: string; action?: React.ReactNode; art?: React.ReactNode }) {

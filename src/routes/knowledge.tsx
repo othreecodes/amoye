@@ -3,7 +3,7 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 
 import { LEVELS, LEVEL_ORDER, type Level } from "@/design/levels";
 import {
-  BeliefCard, BeliefList, Bucket, Empty, Err, Field, Loading, Page, PageHead, Panel, SortPills,
+  BeliefCard, BeliefList, Bucket, Empty, Err, Field, Loading, Page, PageHead, Pager, Panel, Segmented, SortPills,
   type Belief,
 } from "@/design/ui";
 import { call, reverseFor, type Conclusion, type Page as ApiPage } from "@/lib/api";
@@ -29,6 +29,14 @@ import { useAsync } from "@/hooks/use-async";
  *  counts on the pills would lie if we only counted the first. Walk a bounded
  *  number of pages so a large workspace cannot hang the screen. */
 const PAGE_SIZE = 100;
+const ROWS = 25;   // claims on screen at once
+
+type GroupKey = "none" | "person";
+
+const GROUPS: Array<[GroupKey, string]> = [
+  ["none", "Flat list"],
+  ["person", "Group by person"],
+];
 // 4 pages of the newest conclusions. A busy workspace has far more; the
 // screen says so rather than pretending this is everything.
 const MAX_PAGES = 4;
@@ -114,6 +122,8 @@ export default function Knowledge() {
   const [topic, setTopic] = React.useState<string | null>(null);
 
   const [newestFirst, setNewestFirst] = React.useState(true);
+  const [groupBy, setGroupBy] = React.useState<GroupKey>("none");
+  const [page, setPage] = React.useState(1);
   const all = useAsync(() => loadAll(workspace, newestFirst), [workspace, newestFirst]);
   const found = useAsync(
     () => (query ? search(workspace, query) : Promise.resolve(null)),
@@ -158,15 +168,36 @@ export default function Knowledge() {
   );
 
   const base = searched ?? everything;
-  const shown = React.useMemo(() => {
+  const shownAll = React.useMemo(() => {
     let list = base;
     if (filter !== "all") list = list.filter((b) => b.level === filter);
     if (topic) {
       const re = TOPICS.find((t) => t.name === topic)?.re;
       if (re) list = list.filter((b) => re.test(b.text));
     }
+    if (groupBy === "person") {
+      // Keep each person's claims together while leaving the people
+      // themselves in the order the list already had them.
+      const order: string[] = [];
+      const byPerson = new Map<string, typeof list>();
+      for (const b of list) {
+        const key = b.personId ?? b.person ?? "";
+        if (!byPerson.has(key)) { byPerson.set(key, []); order.push(key); }
+        byPerson.get(key)!.push(b);
+      }
+      list = order.flatMap((k) => byPerson.get(k) ?? []);
+    }
     return list;
-  }, [base, filter, topic]);
+  }, [base, filter, topic, groupBy]);
+
+  const pages = Math.max(1, Math.ceil(shownAll.length / ROWS));
+  const shown = React.useMemo(
+    () => shownAll.slice((page - 1) * ROWS, page * ROWS),
+    [shownAll, page],
+  );
+
+  // Any narrowing can leave you past the end of the list.
+  React.useEffect(() => { setPage(1); }, [filter, topic, groupBy, query, newestFirst]);
 
   const searching = !!query;
   const loading = all.loading || (searching && found.loading);
@@ -250,8 +281,11 @@ export default function Knowledge() {
 
       <div className="mb-4 flex flex-wrap items-center gap-2.5">
         <SortPills newestFirst={newestFirst} onChange={setNewestFirst} />
+        <Segmented options={GROUPS} value={groupBy} onChange={setGroupBy} label="Grouping" subtle />
         <span className="mono ml-auto text-[11.5px] text-ink3">
-          {shown.length > 0 ? `showing ${num(shown.length)}` : ""}
+          {shownAll.length > 0
+            ? `${num(Math.min((page - 1) * ROWS + 1, shownAll.length))}–${num(Math.min(page * ROWS, shownAll.length))} of ${num(shownAll.length)}`
+            : ""}
         </span>
       </div>
 
@@ -347,6 +381,15 @@ export default function Knowledge() {
               );
             })}
           </BeliefList>
+
+          <Pager
+            page={page}
+            pages={pages}
+            total={shownAll.length}
+            size={ROWS}
+            onPage={setPage}
+            noun="claims"
+          />
         </>
       )}
     </Page>

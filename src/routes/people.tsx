@@ -2,7 +2,7 @@ import * as React from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Page as PageShell, PageHead, Button, Field, Loading, Empty, Err, Note, Chip, Avatar,
-  Spark, isAgent, Pager, SortPills,
+  Spark, isAgent, Pager, Segmented,
 } from "@/design/ui";
 import { Icon } from "@/design/icons";
 import { LEVELS, LEVEL_ORDER, type Level } from "@/design/levels";
@@ -12,6 +12,7 @@ import { useApp } from "@/lib/app-state";
 import { useAsync } from "@/hooks/use-async";
 import { ago, num } from "@/lib/format";
 import { displayName } from "@/lib/peer-names";
+import { usePeerStats } from "@/hooks/use-peer-stats";
 
 /** The address to try Gravatar with: the one they gave themselves first. */
 function emailOf(p: Peer): string | undefined {
@@ -30,7 +31,31 @@ function emailOf(p: Peer): string | undefined {
    row by row, so a slow or missing profile never holds up the table.
    ──────────────────────────────────────────────────────────────────────── */
 
-const SIZE = 12;
+const SIZE = 12;          // rows on screen
+const FETCH_SIZE = 100;   // the server caps a page here
+const MAX_PEER_PAGES = 20; // 2,000 people before the screen admits a limit
+
+type SortKey = "recent" | "known" | "name";
+type SegmentKey = "all" | "contested" | "rich" | "thin" | "agents";
+
+const SORTS: Array<[SortKey, string]> = [
+  ["recent", "Last seen"],
+  ["known", "Most known"],
+  ["name", "Name"],
+];
+
+/** "Barely known" is the useful end of the scale: these are the people an
+ *  agent will answer with almost nothing behind it. */
+const RICH_AT = 30;
+const THIN_AT = 3;
+
+const SEGMENTS: Array<[SegmentKey, string]> = [
+  ["all", "Everyone"],
+  ["contested", "Has a disagreement"],
+  ["rich", `${RICH_AT}+ things known`],
+  ["thin", "Barely known"],
+  ["agents", "AI agents"],
+];
 
 /** The design switches layout at 900 and 1080. Mirrored here rather than in
  *  Tailwind breakpoints because the column template is a single string. */
@@ -228,25 +253,42 @@ export default function People() {
   const roomy = width >= 1080;
 
   const [page, setPage] = React.useState(1);
-  const [newestFirst, setNewestFirst] = React.useState(true);
+  const [sort, setSort] = React.useState<SortKey>("recent");
+  const [segment, setSegment] = React.useState<SegmentKey>("all");
+  const stats = usePeerStats();
   const [q, setQ] = React.useState("");
   const [adding, setAdding] = React.useState(false);
   const [details, setDetails] = React.useState<Record<string, Detail>>({});
 
   React.useEffect(() => { setPage(1); }, [workspace]);
 
-  const list = useAsync<Page<Peer>>(
-    () => call<Page<Peer>>(
-      "POST", `/v3/workspaces/${encodeURIComponent(workspace)}/peers/list`, {},
-      { query: { page, size: SIZE, reverse: reverseFor("peers", newestFirst) } },
-    ),
-    [workspace, page, newestFirst],
+  // Sorting and segmenting have to see everyone: ordering the twelve rows on
+  // screen by "most known" orders twelve people, not the workspace. A peer
+  // list is small enough to hold whole — a few hundred rows, a call per
+  // hundred — so it is fetched once and the screen works from that.
+  const list = useAsync<{ items: Peer[]; total: number | null; complete: boolean }>(
+    async () => {
+      const ws = encodeURIComponent(workspace);
+      const items: Peer[] = [];
+      let total: number | null = null;
+      let complete = true;
+      for (let page = 1; page <= MAX_PEER_PAGES; page += 1) {
+        const res = await call<Page<Peer>>(
+          "POST", `/v3/workspaces/${ws}/peers/list`, {},
+          { query: { page, size: FETCH_SIZE, reverse: reverseFor("peers", true) } },
+        );
+        const batch = (res?.items ?? []).filter((p): p is Peer => !!p && typeof p.id === "string");
+        items.push(...batch);
+        total = res?.total ?? total;
+        if (batch.length < FETCH_SIZE) break;
+        if (page === MAX_PEER_PAGES) complete = false;
+      }
+      return { items, total, complete };
+    },
+    [workspace],
   );
 
-  const peers = React.useMemo(() => {
-    const items = list.data?.items;
-    return Array.isArray(items) ? items.filter((p): p is Peer => !!p && typeof p.id === "string") : [];
-  }, [list.data]);
+  const peers = React.useMemo(() => list.data?.items ?? [], [list.data]);
 
   // Colour the rows in once the page of names is on screen.
   React.useEffect(() => {
@@ -266,20 +308,47 @@ export default function People() {
     return () => { live = false; };
   }, [workspace, peers]);
 
-  const shown = React.useMemo(() => {
+  const filtered = React.useMemo(() => {
     const needle = q.trim().toLowerCase();
-    if (!needle) return peers;
-    return peers.filter(
-      (p) =>
-        displayName(p).toLowerCase().includes(needle) ||
-        p.id.toLowerCase().includes(needle) ||
-        // Support often has the email and nothing else to go on.
-        String(p.metadata?.email ?? "").toLowerCase().includes(needle),
-    );
-  }, [peers, q]);
+    const matches = (p: Peer) =>
+      !needle ||
+      displayName(p).toLowerCase().includes(needle) ||
+      p.id.toLowerCase().includes(needle) ||
+      // Support often has the email and nothing else to go on.
+      String(p.metadata?.email ?? "").toLowerCase().includes(needle);
+
+    const inSegment = (p: Peer) => {
+      const stat = stats.by.get(p.id);
+      switch (segment) {
+        case "agents": return isAgent(p.id);
+        case "contested": return (stat?.contradictions ?? 0) > 0;
+        case "rich": return (stat?.known ?? 0) >= RICH_AT;
+        case "thin": return (stat?.known ?? 0) < THIN_AT;
+        default: return true;
+      }
+    };
+
+    const rows = peers.filter((p) => matches(p) && inSegment(p));
+
+    const lastSeen = (p: Peer) =>
+      Date.parse(String(details[`${workspace}::${p.id}`]?.lastSeen ?? p.created_at ?? "")) || 0;
+
+    return [...rows].sort((a, b) => {
+      if (sort === "name") return displayName(a).localeCompare(displayName(b));
+      if (sort === "known") return (stats.by.get(b.id)?.known ?? 0) - (stats.by.get(a.id)?.known ?? 0);
+      return lastSeen(b) - lastSeen(a);
+    });
+  }, [peers, q, segment, sort, stats, details, workspace]);
 
   const total = list.data?.total;
-  const pages = Math.max(1, list.data?.pages ?? 1);
+  const pages = Math.max(1, Math.ceil(filtered.length / SIZE));
+  const shown = React.useMemo(
+    () => filtered.slice((page - 1) * SIZE, page * SIZE),
+    [filtered, page],
+  );
+
+  // A filter that shortens the list can leave you past the end of it.
+  React.useEffect(() => { setPage(1); }, [q, segment, sort]);
 
   const cols = roomy
     ? "minmax(0,2fr) minmax(0,1.6fr) minmax(0,1fr) 70px"
@@ -317,11 +386,19 @@ export default function People() {
         </Button>
       </div>
 
-      <div className="mb-3.5 flex flex-wrap items-center gap-2.5">
-        <SortPills newestFirst={newestFirst} onChange={(v) => { setNewestFirst(v); setPage(1); }} />
+      <div className="mb-2.5 flex flex-wrap items-center gap-2.5">
+        <Segmented options={SORTS} value={sort} onChange={setSort} label="Sort" />
         <span className="mono ml-auto text-[11.5px] text-ink3">
-          {shown.length > 0 ? `showing ${num(shown.length)}` : ""}
+          {stats.loading && (sort === "known" || segment !== "all")
+            ? `counting ${num(stats.counted)}…`
+            : filtered.length > 0
+              ? `${num(Math.min((page - 1) * SIZE + 1, filtered.length))}–${num(Math.min(page * SIZE, filtered.length))} of ${num(filtered.length)}`
+              : ""}
         </span>
+      </div>
+
+      <div className="mb-3.5 flex flex-wrap items-center gap-2">
+        <Segmented options={SEGMENTS} value={segment} onChange={setSegment} label="Show" subtle />
       </div>
 
       <div
