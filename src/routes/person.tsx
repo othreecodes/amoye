@@ -137,6 +137,14 @@ export default function Person() {
   const [briefOpen, setBriefOpen] = React.useState(false);
   const [copied, setCopied] = React.useState<string | null>(null);
 
+  // Peer ids are scoped to a workspace. Staying on this page through a
+  // workspace switch would ask the new workspace about a stranger's id, so
+  // step back to the list instead.
+  const openedIn = React.useRef(workspace);
+  React.useEffect(() => {
+    if (openedIn.current !== workspace) nav("/people", { replace: true });
+  }, [workspace, nav]);
+
   // The contact details live on the peer, not in the conclusions. Support
   // needs them at hand: the email or the number is how they look someone up
   // in every other tool they have open.
@@ -158,6 +166,7 @@ export default function Person() {
     return { found: !!hit, meta: mine?.metadata ?? {} };
   }, [ws, personId]);
   const missing = profile.data ? !profile.data.found : false;
+  const profileFound = profile.data?.found ?? false;
 
   /* ── everything we know, with the representation as the fallback source ── */
   const know = useAsync<Know>(async () => {
@@ -201,9 +210,14 @@ export default function Person() {
       };
     }
 
+    // The representation endpoint CREATES the peer it is asked about. Without
+    // this guard, opening a person id that belongs to another workspace mints
+    // it here -- which is how an Intercom customer appeared in the internal
+    // workspace after a workspace switch left their id in the url.
+    if (!profileFound) return { beliefs: [], stamps: [], fromCard: true };
     const rep = await call<unknown>("POST", `/v3/workspaces/${ws}/peers/${pid}/representation`, {});
     return { beliefs: beliefsFromRepresentation(textOf(rep)), stamps: [], fromCard: true };
-  }, [ws, pid, personId]);
+  }, [ws, pid, personId, profileFound]);
 
   /* ── where they turn up ── */
   const convs = useAsync(
