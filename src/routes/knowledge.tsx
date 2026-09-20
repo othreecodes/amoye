@@ -3,16 +3,17 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 
 import { LEVELS, LEVEL_ORDER, type Level } from "@/design/levels";
 import {
-  BeliefCard, BeliefList, Bucket, Empty, Err, Field, Loading, Page, PageHead, Panel,
+  BeliefCard, BeliefList, Bucket, Empty, Err, Field, Loading, Page, PageHead, Panel, SortPills,
   type Belief,
 } from "@/design/ui";
-import { call, type Conclusion, type Page as ApiPage } from "@/lib/api";
+import { call, reverseFor, type Conclusion, type Page as ApiPage } from "@/lib/api";
 import { Icon } from "@/design/icons";
 import { cn } from "@/lib/utils";
 import { useApp } from "@/lib/app-state";
 import { bucketOf, num } from "@/lib/format";
 import { asList, countLevels, dedupeBeliefs, toBelief } from "@/lib/model";
 import { usePeerNames } from "@/hooks/use-peer-names";
+import { Disagreement } from "@/components/disagreement";
 import { useAsync } from "@/hooks/use-async";
 
 /* ────────────────────────────────────────────────────────────────────────
@@ -34,7 +35,7 @@ const MAX_PAGES = 4;
 
 export type Loaded = { items: Conclusion[]; total: number | null; capped: boolean };
 
-async function loadAll(workspace: string): Promise<Loaded> {
+async function loadAll(workspace: string, newestFirst: boolean): Promise<Loaded> {
   const out: Conclusion[] = [];
   let total: number | null = null;
   for (let p = 1; p <= MAX_PAGES; p++) {
@@ -46,7 +47,7 @@ async function loadAll(workspace: string): Promise<Loaded> {
       // sessions/list: false is newest-first here, true is newest-first there.
       // Measured against the server; passing true hands back the oldest rows
       // and the screen quietly stops updating.
-      { query: { page: p, size: PAGE_SIZE, reverse: false } },
+      { query: { page: p, size: PAGE_SIZE, reverse: reverseFor("conclusions", newestFirst) } },
     );
     const batch = asList<Conclusion>(res);
     out.push(...batch);
@@ -112,7 +113,8 @@ export default function Knowledge() {
   );
   const [topic, setTopic] = React.useState<string | null>(null);
 
-  const all = useAsync(() => loadAll(workspace), [workspace]);
+  const [newestFirst, setNewestFirst] = React.useState(true);
+  const all = useAsync(() => loadAll(workspace, newestFirst), [workspace, newestFirst]);
   const found = useAsync(
     () => (query ? search(workspace, query) : Promise.resolve(null)),
     [workspace, query],
@@ -133,6 +135,14 @@ export default function Knowledge() {
     () => (found.data ? dedupeBeliefs(found.data.map(toBelief)).map(nameBelief) : null),
     [found.data, nameBelief],
   );
+
+  // BeliefCard carries display fields only; a contradiction needs its raw
+  // conclusion to reach source_ids.
+  const raw = React.useMemo(() => {
+    const m: Record<string, Conclusion> = {};
+    for (const c of all.data?.items ?? []) m[String(c.id)] = c;
+    return m;
+  }, [all.data]);
 
   const counts = React.useMemo(() => countLevels(everything), [everything]);
   const total = everything.length;
@@ -238,6 +248,13 @@ export default function Knowledge() {
         ))}
       </div>
 
+      <div className="mb-4 flex flex-wrap items-center gap-2.5">
+        <SortPills newestFirst={newestFirst} onChange={setNewestFirst} />
+        <span className="mono ml-auto text-[11.5px] text-ink3">
+          {shown.length > 0 ? `showing ${num(shown.length)}` : ""}
+        </span>
+      </div>
+
       {topics.length > 0 && (
         <div className="mb-4 flex flex-wrap gap-[7px]">
           {topics.map((t) => (
@@ -314,7 +331,16 @@ export default function Knowledge() {
                   // display name sent clicks to /people/Jane, and the person
                   // page then CREATED a peer called "Jane" by asking Honcho
                   // about it.
-                  b={{ ...b, person: who ?? undefined }}
+                  b={{
+                    ...b,
+                    person: who ?? undefined,
+                    // A contradiction is worth nothing without the two claims
+                    // it sits between, so they open inline underneath it.
+                    children:
+                      b.level === "contradiction" && raw[b.id] ? (
+                        <Disagreement conclusion={raw[b.id]} />
+                      ) : undefined,
+                  }}
                   onPerson={(id) => navigate(`/people/${encodeURIComponent(id)}`)}
                 />
                 </React.Fragment>

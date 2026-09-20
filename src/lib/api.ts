@@ -53,6 +53,20 @@ export function onApiKeyChange(l: (key: string) => void): () => void {
   return () => void keyListeners.delete(l);
 }
 
+/**
+ * `reverse` does not mean the same thing on every list endpoint. On
+ * peers/list and sessions/list, true is newest-first. On conclusions/list it
+ * is the opposite. Measured against the server, and the kind of difference
+ * that silently freezes a screen on its oldest rows — so the direction is
+ * decided here rather than at each call site.
+ */
+export function reverseFor(
+  endpoint: "peers" | "sessions" | "conclusions",
+  newestFirst: boolean,
+): boolean {
+  return endpoint === "conclusions" ? !newestFirst : newestFirst;
+}
+
 export type TrafficEntry = {
   id: number;
   at: number;

@@ -8,6 +8,7 @@ import {
   type Session,
 } from "@/lib/api";
 import { useApp } from "@/lib/app-state";
+import { reverseFor } from "@/lib/api";
 import { useAsync, usePoll } from "@/hooks/use-async";
 import { asList } from "@/lib/model";
 import { ago, bucketOf, num } from "@/lib/format";
@@ -26,6 +27,8 @@ import {
   Textarea,
   Bucket,
   Pager,
+  SortPills,
+  isAgent,
 } from "@/design/ui";
 import { Icon } from "@/design/icons";
 
@@ -60,8 +63,22 @@ function metaString(meta: Record<string, unknown> | undefined, keys: string[]): 
 
 /** Threads rarely carry a subject. When one does, it leads; otherwise the
  *  reference is read back as a phrase rather than dumped as an id. */
-function subjectOf(s: Session): string {
-  return metaString(s.metadata, ["title", "subject", "name", "summary", "topic"]) ?? humanize(s.id);
+/**
+ * What to call a thread.
+ *
+ * Honcho stores no subject, so without help this printed the session id with
+ * its dashes taken out — "Chat intercom main ea0c89a04036f2cfdd6f95e3" on
+ * every row, which distinguishes nothing. The person in the thread is the
+ * thing that tells them apart, so name it after them and keep the id in the
+ * line underneath, where it is still there to copy.
+ */
+function subjectOf(s: Session, people?: Peer[]): string {
+  const stated = metaString(s.metadata, ["title", "subject", "name", "summary", "topic"]);
+  if (stated) return stated;
+  const human = (people ?? []).filter((p) => !isAgent(p.id) && p.id !== "owner");
+  if (human.length === 1) return `${nameOfPeer(human[0])}`;
+  if (human.length > 1) return `${nameOfPeer(human[0])} and ${human.length - 1} more`;
+  return humanize(s.id);
 }
 
 function nameOfPeer(p: Peer): string {
@@ -157,14 +174,17 @@ function ThreadRow({
   reading: boolean;
   onOpen: () => void;
 }) {
-  const names = (people ?? []).map(nameOfPeer);
+  // `owner` is the memory plugin's catch-all peer, on every thread and
+  // meaning nobody. Listing it as a participant is noise.
+  const named = (people ?? []).filter((p) => p.id !== "owner");
+  const names = named.map(nameOfPeer);
   const who =
     names.length === 0
       ? null
       : names.length <= 2
         ? names.join(" and ")
         : `${names[0]}, ${names[1]} and ${names.length - 2} more`;
-  const lead = people && people.length > 0 ? people[0].id : session.id;
+  const lead = named.length > 0 ? named[0].id : session.id;
 
   return (
     <button
@@ -175,7 +195,7 @@ function ThreadRow({
       <Avatar id={lead} size={32} />
 
       <span className="min-w-0 flex-1">
-        <span className="block truncate text-[14.5px] font-semibold">{subjectOf(session)}</span>
+        <span className="block truncate text-[14.5px] font-semibold">{subjectOf(session, people)}</span>
         <span className="mt-[2px] block truncate text-[12.5px] text-ink3">
           {who ? <>{who} · </> : null}
           <span className="mono">{session.id}</span>
@@ -283,6 +303,7 @@ export function Conversations() {
 
   const [q, setQ] = React.useState("");
   const [page, setPage] = React.useState(1);
+  const [newestFirst, setNewestFirst] = React.useState(true);
   const [composing, setComposing] = React.useState(false);
 
   const searching = q.trim().length > 0;
@@ -297,9 +318,9 @@ export function Conversations() {
         "POST",
         `/v3/workspaces/${encodeURIComponent(workspace)}/sessions/list`,
         {},
-        { query: { page: wanted, size, reverse: true } },
+        { query: { page: wanted, size, reverse: reverseFor("sessions", newestFirst) } },
       ),
-    [workspace, wanted, size],
+    [workspace, wanted, size, newestFirst],
   );
 
   const all = React.useMemo(() => asList<Session>(listed.data), [listed.data]);
@@ -310,7 +331,7 @@ export function Conversations() {
     const needle = q.trim().toLowerCase();
     if (!needle) return all;
     return all.filter((s) =>
-      `${s.id} ${subjectOf(s)}`.toLowerCase().includes(needle),
+      `${s.id} ${subjectOf(s, people[s.id])}`.toLowerCase().includes(needle),
     );
   }, [all, q]);
 
@@ -372,6 +393,15 @@ export function Conversations() {
             : total === undefined ? "" : `${num(total)} total`}
         </span>
       </div>
+
+      {!searching && (
+        <div className="mb-3.5 flex flex-wrap items-center gap-2.5">
+          <SortPills newestFirst={newestFirst} onChange={(v) => { setNewestFirst(v); setPage(1); }} />
+          <span className="mono ml-auto text-[11.5px] text-ink3">
+            {rows.length > 0 ? `showing ${num(rows.length)}` : ""}
+          </span>
+        </div>
+      )}
 
       <div
         className="overflow-hidden rounded-[14px] border"

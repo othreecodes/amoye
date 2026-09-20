@@ -2,11 +2,11 @@ import * as React from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Page as PageShell, PageHead, Button, Field, Loading, Empty, Err, Note, Chip, Avatar,
-  Spark, isAgent, Pager,
+  Spark, isAgent, Pager, SortPills,
 } from "@/design/ui";
 import { Icon } from "@/design/icons";
 import { LEVELS, LEVEL_ORDER, type Level } from "@/design/levels";
-import { call, ApiError, type Page, type Peer, type Session } from "@/lib/api";
+import { call, ApiError, reverseFor, type Page, type Peer, type Session } from "@/lib/api";
 import { beliefsFromRepresentation, countLevels } from "@/lib/model";
 import { useApp } from "@/lib/app-state";
 import { useAsync } from "@/hooks/use-async";
@@ -228,6 +228,7 @@ export default function People() {
   const roomy = width >= 1080;
 
   const [page, setPage] = React.useState(1);
+  const [newestFirst, setNewestFirst] = React.useState(true);
   const [q, setQ] = React.useState("");
   const [adding, setAdding] = React.useState(false);
   const [details, setDetails] = React.useState<Record<string, Detail>>({});
@@ -237,9 +238,9 @@ export default function People() {
   const list = useAsync<Page<Peer>>(
     () => call<Page<Peer>>(
       "POST", `/v3/workspaces/${encodeURIComponent(workspace)}/peers/list`, {},
-      { query: { page, size: SIZE } },
+      { query: { page, size: SIZE, reverse: reverseFor("peers", newestFirst) } },
     ),
-    [workspace, page],
+    [workspace, page, newestFirst],
   );
 
   const peers = React.useMemo(() => {
@@ -314,6 +315,13 @@ export default function People() {
         <Button kind="ghost" icon="refresh" onClick={list.reload} title="Check again">
           {wide ? "Refresh" : ""}
         </Button>
+      </div>
+
+      <div className="mb-3.5 flex flex-wrap items-center gap-2.5">
+        <SortPills newestFirst={newestFirst} onChange={(v) => { setNewestFirst(v); setPage(1); }} />
+        <span className="mono ml-auto text-[11.5px] text-ink3">
+          {shown.length > 0 ? `showing ${num(shown.length)}` : ""}
+        </span>
       </div>
 
       <div

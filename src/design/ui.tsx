@@ -606,6 +606,37 @@ export function Bucket({ label }: { label: string }) {
   );
 }
 
+/** Newest or oldest. Both are server-side, so the order holds across the
+ *  whole list rather than shuffling the page you happen to be looking at. */
+export function SortPills({
+  newestFirst,
+  onChange,
+}: {
+  newestFirst: boolean;
+  onChange: (newestFirst: boolean) => void;
+}) {
+  return (
+    <div className="flex items-center gap-1.5" role="group" aria-label="Sort order">
+      {[true, false].map((v) => (
+        <button
+          key={String(v)}
+          type="button"
+          onClick={() => onChange(v)}
+          aria-pressed={newestFirst === v}
+          className="cursor-pointer rounded-[20px] border px-3 py-1.5 text-[12.5px] transition-colors"
+          style={
+            newestFirst === v
+              ? { background: "var(--ink)", color: "var(--bg)", borderColor: "var(--ink)" }
+              : { background: "var(--panel)", color: "var(--ink2)", borderColor: "var(--line)" }
+          }
+        >
+          {v ? "Newest" : "Oldest"}
+        </button>
+      ))}
+    </div>
+  );
+}
+
 export function Empty({
   headline, hint, action, art,
 }: { headline: string; hint?: string; action?: React.ReactNode; art?: React.ReactNode }) {
