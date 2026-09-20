@@ -8,6 +8,7 @@ import {
 } from "@/design/ui";
 import { call, type Conclusion, type Page as ApiPage } from "@/lib/api";
 import { useApp } from "@/lib/app-state";
+import { num } from "@/lib/format";
 import { asList, countLevels, dedupeBeliefs, toBelief } from "@/lib/model";
 import { usePeerNames } from "@/hooks/use-peer-names";
 import { useAsync } from "@/hooks/use-async";
@@ -25,9 +26,13 @@ import { useAsync } from "@/hooks/use-async";
  *  counts on the pills would lie if we only counted the first. Walk a bounded
  *  number of pages so a large workspace cannot hang the screen. */
 const PAGE_SIZE = 100;
+// 4 pages of the newest conclusions. A busy workspace has far more; the
+// screen says so rather than pretending this is everything.
 const MAX_PAGES = 4;
 
-async function loadAll(workspace: string): Promise<Conclusion[]> {
+export type Loaded = { items: Conclusion[]; total: number | null; capped: boolean };
+
+async function loadAll(workspace: string): Promise<Loaded> {
   const out: Conclusion[] = [];
   let total: number | null = null;
   for (let p = 1; p <= MAX_PAGES; p++) {
@@ -35,7 +40,11 @@ async function loadAll(workspace: string): Promise<Conclusion[]> {
       "POST",
       `/v3/workspaces/${encodeURIComponent(workspace)}/conclusions/list`,
       {},
-      { query: { page: p, size: PAGE_SIZE, reverse: true } },
+      // `reverse` is inverted on conclusions/list compared with peers/list and
+      // sessions/list: false is newest-first here, true is newest-first there.
+      // Measured against the server; passing true hands back the oldest rows
+      // and the screen quietly stops updating.
+      { query: { page: p, size: PAGE_SIZE, reverse: false } },
     );
     const batch = asList<Conclusion>(res);
     out.push(...batch);
@@ -44,7 +53,7 @@ async function loadAll(workspace: string): Promise<Conclusion[]> {
     if (batch.length < PAGE_SIZE) break;
     if (typeof pages === "number" && p >= pages) break;
   }
-  return out;
+  return { items: out, total, capped: total !== null && out.length < total };
 }
 
 async function search(workspace: string, query: string): Promise<Conclusion[]> {
@@ -115,7 +124,7 @@ export default function Knowledge() {
   const everything: Belief[] = React.useMemo(
     // Honcho writes conclusions with the peer id inside the sentence; swap in
     // the name so the page reads as people rather than identifiers.
-    () => dedupeBeliefs((all.data ?? []).map(toBelief)).map(nameBelief),
+    () => dedupeBeliefs((all.data?.items ?? []).map(toBelief)).map(nameBelief),
     [all.data, nameBelief],
   );
   const searched: Belief[] | null = React.useMemo(
@@ -158,7 +167,11 @@ export default function Knowledge() {
     <Page>
       <PageHead
         title="What we know"
-        lede={`Every conclusion Amòye has drawn about your ${vocab.audience}, and how it got there.`}
+        lede={
+          all.data?.capped
+            ? `The ${num(everything.length)} most recent conclusions, of ${num(all.data.total ?? 0)} drawn about your ${vocab.audience}. Search to reach the rest.`
+            : `Every conclusion Amòye has drawn about your ${vocab.audience}, and how it got there.`
+        }
       />
 
       {contradictions > 0 && (

@@ -124,7 +124,7 @@ export default function Today() {
     [workspace],
   );
   const conclusions = useAsync(
-    () => call<ApiPage<Conclusion>>("POST", `/v3/workspaces/${workspace}/conclusions/list`, {}, { query: { size: 100, reverse: true } }),
+    () => call<ApiPage<Conclusion>>("POST", `/v3/workspaces/${workspace}/conclusions/list`, {}, { query: { size: 100, reverse: false } }),
     [workspace],
   );
   const queue = useAsync(

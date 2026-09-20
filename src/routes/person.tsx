@@ -173,7 +173,7 @@ export default function Person() {
           "POST",
           `/v3/workspaces/${ws}/conclusions/list`,
           { filters: { observed: personId } },
-          { query: { size: 100, page, reverse: true } },
+          { query: { size: 100, page, reverse: false } },
         );
         const batch = asList<Conclusion>(r);
         items = items.concat(batch);

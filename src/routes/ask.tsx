@@ -14,6 +14,7 @@
  */
 import * as React from "react";
 import { usePeerNames } from "@/hooks/use-peer-names";
+import { Markdown } from "@/design/markdown";
 import { useSearchParams } from "react-router-dom";
 import { ApiError, call, stream, type Peer } from "@/lib/api";
 import { asList } from "@/lib/model";
@@ -27,7 +28,7 @@ type Source = { text: string; color: string };
 /** Ids are how Honcho names a person; a sentence is how a reader wants one.
  *  "cust-ada_okonkwo" reads as "Cust Ada Okonkwo" rather than as a key. */
 export default function Ask() {
-  const { nameFor } = usePeerNames();
+  const { nameFor, humanize } = usePeerNames();
   const { workspace, vocab } = useApp();
   const ws = encodeURIComponent(workspace);
   const [params, setParams] = useSearchParams();
@@ -269,8 +270,11 @@ export default function Ask() {
               type="button"
               onClick={() => void run(s)}
               disabled={busy}
-              className="cursor-pointer rounded-[20px] border border-dashed px-3 py-1.5 text-[12.5px] text-ink2 transition-colors hover:text-ink disabled:cursor-not-allowed disabled:opacity-50"
-              style={{ borderColor: "var(--line2)", background: "transparent" }}
+              // Dashed and transparent read as a caption rather than a
+              // control, so nobody tried clicking them. Solid edge, a real
+              // surface, and a hover that moves.
+              className="cursor-pointer rounded-[20px] border px-3.5 py-1.5 text-[12.5px] text-ink2 transition-colors hover:border-[var(--line2)] hover:bg-[var(--panel2)] hover:text-ink disabled:cursor-not-allowed disabled:opacity-50"
+              style={{ borderColor: "var(--line)", background: "var(--panel)" }}
             >
               {s}
             </button>
@@ -293,8 +297,14 @@ export default function Ask() {
               <Err>Could not answer that: {error}</Err>
             ) : (
               <div className="text-[16.5px] leading-[1.7]" style={{ textWrap: "pretty" }}>
-                {out ||
-                  (busy ? "" : "Nothing came back for that one. Try asking it a different way.")}
+                {out ? (
+                  // The answer arrives as Markdown with peer ids in it. Render
+                  // the marks, and swap the ids for names — an id in prose is
+                  // unreadable and the reader cannot act on it.
+                  <Markdown text={humanize(out)} />
+                ) : busy ? null : (
+                  "Nothing came back for that one. Try asking it a different way."
+                )}
                 {busy && (
                   <span
                     className="hx-blink ml-0.5 inline-block h-[17px] w-[8px] align-[-3px]"
@@ -308,7 +318,7 @@ export default function Ask() {
             {done && !error && sources.length > 0 && (
               <div className="mt-[18px] border-t pt-[15px]" style={{ borderColor: "var(--line)" }}>
                 <div className="mono mb-2.5 text-[10.5px] uppercase tracking-[0.09em] text-ink3">
-                  What this rests on
+                  Answered from
                 </div>
                 <div className="flex flex-wrap gap-2">
                   {sources.map((s) => (
