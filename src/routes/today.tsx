@@ -271,7 +271,14 @@ export default function Today() {
           <Empty
             headline="Nothing known yet"
             hint={`Send a ${vocab.conversation.toLowerCase()} in and Amòye reads it, works out what it can about the ${vocab.people.toLowerCase()} in it, then keeps that picture up to date. The first conclusions usually appear a minute or two after the first message.`}
-            action={<Button kind="primary" icon="dev" onClick={() => nav("/developer")}>Connect from code</Button>}
+            action={
+              <span className="flex flex-wrap items-center justify-center gap-2">
+                <Button kind="primary" icon="plus" onClick={() => nav("/conversations?new=1")}>
+                  Add your first {vocab.conversation.toLowerCase()}
+                </Button>
+                <Button icon="dev" onClick={() => nav("/developer")}>Connect from code</Button>
+              </span>
+            }
           />
         </div>
       )}

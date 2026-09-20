@@ -123,6 +123,20 @@ function writeNutshell(key: string, prose: string) {
   }
 }
 
+/**
+ * Every thread on this page is with the same person, so naming them after
+ * whoever is in them would print one name a dozen times. Honcho stores no
+ * subject either, and the raw session id is unreadable. The date is the one
+ * thing that actually tells these apart.
+ */
+function threadTitle(s: Session): string {
+  const stated = s.metadata?.title ?? s.metadata?.subject;
+  if (typeof stated === "string" && stated.trim()) return stated.trim();
+  const t = s.created_at ? Date.parse(String(s.created_at)) : Number.NaN;
+  if (Number.isNaN(t)) return "Undated conversation";
+  return `Conversation on ${new Date(t).toLocaleDateString(undefined, { day: "numeric", month: "long" })}`;
+}
+
 export default function Person() {
   const params = useParams();
   const nav = useNavigate();
@@ -736,7 +750,7 @@ export default function Person() {
               >
                 <span className="min-w-0 flex-1">
                   <span className="block truncate text-[13.5px] font-medium">
-                    {String(s.metadata?.title ?? s.metadata?.subject ?? s.id)}
+                    {threadTitle(s)}
                   </span>
                   <span className="mono mt-0.5 block truncate text-[12px] text-ink3">{s.id}</span>
                 </span>

@@ -1,5 +1,5 @@
 import * as React from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import {
   call,
   type Page as ApiPage,
@@ -314,7 +314,10 @@ export function Conversations() {
   const [q, setQ] = React.useState("");
   const [page, setPage] = React.useState(1);
   const [convFilter, setConvFilter] = React.useState<ConvFilter>("all");
-  const [composing, setComposing] = React.useState(false);
+  // Today's empty state sends people here to start one, so the composer
+  // opens on arrival rather than making them find the button.
+  const [params] = useSearchParams();
+  const [composing, setComposing] = React.useState(params.get("new") === "1");
 
   const searching = q.trim().length > 0;
   const size = searching ? SEARCH_SIZE : PAGE_SIZE;
