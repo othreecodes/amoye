@@ -2,7 +2,7 @@ import * as React from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Page as PageShell, PageHead, Button, Field, Loading, Empty, Err, Note, Chip, Avatar,
-  Spark, isAgent,
+  Spark, isAgent, Pager,
 } from "@/design/ui";
 import { Icon } from "@/design/icons";
 import { LEVELS, LEVEL_ORDER, type Level } from "@/design/levels";
@@ -435,27 +435,18 @@ export default function People() {
             </button>
           );
         })}
+
+        <Pager
+          page={page}
+          pages={pages}
+          total={total ?? null}
+          size={SIZE}
+          onPage={setPage}
+          noun={vocab.people.toLowerCase()}
+        />
       </div>
 
-      {pages > 1 && (
-        <div className="mt-3.5 flex items-center justify-between gap-3">
-          <Note>
-            Page {page} of {pages}
-          </Note>
-          <div className="flex gap-2">
-            <Button kind="ghost" onClick={() => setPage((n) => Math.max(1, n - 1))} disabled={page <= 1}>
-              Previous
-            </Button>
-            <Button
-              kind="ghost"
-              onClick={() => setPage((n) => Math.min(pages, n + 1))}
-              disabled={page >= pages}
-            >
-              Next
-            </Button>
-          </div>
-        </div>
-      )}
+
 
       {adding && (
         <AddPerson

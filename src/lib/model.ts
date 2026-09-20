@@ -14,6 +14,7 @@ export function toBelief(c: Conclusion, i: number): Belief {
     person: String(c.observed_id ?? c.observed ?? c.observer_id ?? c.observer ?? "they"),
     evidence: typeof c.message_count === "number" ? c.message_count : undefined,
     meta: c.created_at ? `${ago(String(c.created_at))} ago` : undefined,
+    at: c.created_at ? String(c.created_at) : undefined,
   };
 }
 

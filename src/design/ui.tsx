@@ -2,6 +2,7 @@ import * as React from "react";
 import { Icon, type IconName } from "./icons";
 import { LEVELS, LEVEL_ORDER, type Level } from "./levels";
 import { cn } from "@/lib/utils";
+import { num } from "@/lib/format";
 import { useGravatar } from "@/hooks/use-gravatar";
 
 /* ────────────────────────────────────────────────────────────────────────
@@ -186,6 +187,9 @@ export type Belief = {
   text: string;
   level: Level;
   meta?: string;
+  /** When it was drawn, ISO. `meta` is already formatted, so grouping
+   *  by recency needs the raw value. */
+  at?: string;
   /** Display name shown in the meta line. */
   person?: string;
   /** The id to navigate to, when it differs from the display name. */
@@ -506,6 +510,99 @@ export function Pill({
     >
       {children}
     </button>
+  );
+}
+
+/**
+ * Page through a long list.
+ *
+ * The range text carries the weight — "13–24 of 161" tells you where you are
+ * in a way a row of numbers does not — and the numbers are there for the jump.
+ * A long list is windowed around the current page so the control never grows
+ * past a handful of targets.
+ */
+export function Pager({
+  page,
+  pages,
+  total,
+  size,
+  onPage,
+  noun = "items",
+}: {
+  page: number;
+  pages: number;
+  total?: number | null;
+  size: number;
+  onPage: (p: number) => void;
+  noun?: string;
+}) {
+  if (pages <= 1) return null;
+  const first = (page - 1) * size + 1;
+  const last = total != null ? Math.min(page * size, total) : page * size;
+  const range = total != null ? `${num(first)}–${num(last)} of ${num(total)} ${noun}` : `Page ${page} of ${pages}`;
+
+  // A window of five, clamped to the ends, so page 1 and the last page are
+  // always one click away without printing every number in between.
+  const from = Math.max(1, Math.min(page - 2, pages - 4));
+  const to = Math.min(pages, Math.max(page + 2, 5));
+  const numbers: number[] = [];
+  for (let i = from; i <= to; i += 1) numbers.push(i);
+
+  return (
+    <div
+      className="flex flex-wrap items-center justify-between gap-3 px-[17px] py-3"
+      style={{ borderTop: "1px solid var(--line)" }}
+    >
+      <span className="mono text-[11.5px] text-ink3">{range}</span>
+      <div className="flex items-center gap-1.5">
+        <PagerButton disabled={page <= 1} onClick={() => onPage(page - 1)}>← Prev</PagerButton>
+        {numbers.map((n) => (
+          <PagerButton key={n} current={n === page} onClick={() => onPage(n)}>
+            {n}
+          </PagerButton>
+        ))}
+        <PagerButton disabled={page >= pages} onClick={() => onPage(page + 1)}>Next →</PagerButton>
+      </div>
+    </div>
+  );
+}
+
+function PagerButton({
+  children, onClick, disabled, current,
+}: {
+  children: React.ReactNode; onClick: () => void; disabled?: boolean; current?: boolean;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      aria-current={current ? "page" : undefined}
+      className={cn(
+        "mono cursor-pointer rounded-[7px] border px-2.5 py-1 text-[11.5px] transition-colors",
+        "disabled:cursor-not-allowed disabled:opacity-40",
+        !current && !disabled && "hover:bg-[var(--panel2)] hover:text-ink",
+      )}
+      style={
+        current
+          ? { background: "var(--ink)", color: "var(--bg)", borderColor: "var(--ink)" }
+          : { background: "transparent", borderColor: "var(--line)", color: "var(--ink2)" }
+      }
+    >
+      {children}
+    </button>
+  );
+}
+
+/** A date heading above a run of rows — "Today", "Earlier this week". */
+export function Bucket({ label }: { label: string }) {
+  return (
+    <div
+      className="mono px-[17px] py-2 text-[10.5px] uppercase tracking-[0.08em] text-ink3"
+      style={{ background: "var(--panel2)", borderBottom: "1px solid var(--line)" }}
+    >
+      {label}
+    </div>
   );
 }
 

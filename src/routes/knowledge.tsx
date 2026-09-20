@@ -3,12 +3,14 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 
 import { LEVELS, LEVEL_ORDER, type Level } from "@/design/levels";
 import {
-  BeliefCard, BeliefList, Empty, Err, Field, Loading, Page, PageHead, Panel,
+  BeliefCard, BeliefList, Bucket, Empty, Err, Field, Loading, Page, PageHead, Panel,
   type Belief,
 } from "@/design/ui";
 import { call, type Conclusion, type Page as ApiPage } from "@/lib/api";
+import { Icon } from "@/design/icons";
+import { cn } from "@/lib/utils";
 import { useApp } from "@/lib/app-state";
-import { num } from "@/lib/format";
+import { bucketOf, num } from "@/lib/format";
 import { asList, countLevels, dedupeBeliefs, toBelief } from "@/lib/model";
 import { usePeerNames } from "@/hooks/use-peer-names";
 import { useAsync } from "@/hooks/use-async";
@@ -242,14 +244,22 @@ export default function Knowledge() {
             <button
               key={t.name}
               onClick={() => setTopic(topic === t.name ? null : t.name)}
-              className="tnum cursor-pointer whitespace-nowrap rounded-full border border-dashed px-2.5 py-[5px] text-[12px] transition-colors"
+              // An applied filter is a thing you take off, so it gets a solid
+              // edge, a surface and a ×. An unapplied one stays dashed, which
+              // reads as "available" rather than "on".
+              className={cn(
+                "tnum flex cursor-pointer items-center gap-1.5 whitespace-nowrap rounded-full border px-2.5 py-[5px] text-[12px] transition-colors",
+                topic !== t.name && "border-dashed hover:text-ink",
+              )}
               style={
                 topic === t.name
-                  ? { borderColor: "var(--ink3)", color: "var(--ink)" }
-                  : { borderColor: "var(--line2)", color: "var(--ink3)" }
+                  ? { borderColor: "var(--line2)", background: "var(--panel2)", color: "var(--ink)" }
+                  : { borderColor: "var(--line2)", background: "transparent", color: "var(--ink3)" }
               }
+              aria-pressed={topic === t.name}
             >
               {t.name} · {t.n}
+              {topic === t.name && <Icon name="close" size={11} />}
             </button>
           ))}
         </div>
@@ -289,11 +299,17 @@ export default function Knowledge() {
             </p>
           )}
           <BeliefList>
-            {shown.map((b) => {
+            {shown.map((b, i) => {
+              // Claims arrive newest-first, so a heading each time the
+              // recency band changes groups them without reordering.
+              const bucket = bucketOf(b.at);
+              const previous = i === 0 ? null : bucketOf(shown[i - 1].at);
+              const newBucket = bucket !== previous;
               const who = b.person ?? knownName(b.personId ?? "") ?? null;
               return (
+                <React.Fragment key={b.id}>
+                {newBucket && <Bucket label={bucket} />}
                 <BeliefCard
-                  key={b.id}
                   // personId must stay the peer id. Overwriting it with the
                   // display name sent clicks to /people/Jane, and the person
                   // page then CREATED a peer called "Jane" by asking Honcho
@@ -301,6 +317,7 @@ export default function Knowledge() {
                   b={{ ...b, person: who ?? undefined }}
                   onPerson={(id) => navigate(`/people/${encodeURIComponent(id)}`)}
                 />
+                </React.Fragment>
               );
             })}
           </BeliefList>

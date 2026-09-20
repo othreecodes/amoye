@@ -10,7 +10,7 @@ import {
 import { useApp } from "@/lib/app-state";
 import { useAsync, usePoll } from "@/hooks/use-async";
 import { asList } from "@/lib/model";
-import { ago, num } from "@/lib/format";
+import { ago, bucketOf, num } from "@/lib/format";
 import {
   Avatar,
   Button,
@@ -24,6 +24,8 @@ import {
   PageHead,
   Panel,
   Textarea,
+  Bucket,
+  Pager,
 } from "@/design/ui";
 import { Icon } from "@/design/icons";
 
@@ -318,8 +320,6 @@ export function Conversations() {
   const open = (id: string) => navigate(`/conversations/${encodeURIComponent(id)}`);
 
   const convWord = vocab.conversation.toLowerCase();
-  const first = (page - 1) * PAGE_SIZE + 1;
-  const last = (page - 1) * PAGE_SIZE + rows.length;
 
   return (
     <Page>
@@ -410,42 +410,36 @@ export function Conversations() {
           )
         )}
 
-        {rows.map((s) => (
-          <ThreadRow
-            key={s.id}
-            session={s}
-            people={people[s.id]}
-            reading={reading[s.id] === true}
-            onOpen={() => open(s.id)}
+        {rows.map((s, i) => {
+          // A heading whenever the recency band changes. The list is already
+          // newest-first, so this groups without reordering anything.
+          const bucket = bucketOf(s.created_at);
+          const previous = i === 0 ? null : bucketOf(rows[i - 1].created_at);
+          return (
+            <React.Fragment key={s.id}>
+              {bucket !== previous && <Bucket label={bucket} />}
+              <ThreadRow
+                session={s}
+                people={people[s.id]}
+                reading={reading[s.id] === true}
+                onOpen={() => open(s.id)}
+              />
+            </React.Fragment>
+          );
+        })}
+
+        {!searching && rows.length > 0 && (
+          <Pager
+            page={page}
+            pages={Math.max(pages, page)}
+            total={total ?? null}
+            size={PAGE_SIZE}
+            onPage={setPage}
+            noun={vocab.conversations.toLowerCase()}
           />
-        ))}
+        )}
       </div>
 
-      {!searching && rows.length > 0 && (
-        <div className="mt-3.5 flex flex-wrap items-center gap-3">
-          <span className="tnum text-[12.5px] text-ink2">
-            Showing {num(first)}–{num(last)}
-            {total === undefined ? "" : ` of ${num(total)}`}, newest first
-          </span>
-          <div className="ml-auto flex items-center gap-2">
-            <Button
-              onClick={() => setPage((p) => Math.max(1, p - 1))}
-              disabled={page <= 1 || listed.loading}
-            >
-              Newer
-            </Button>
-            <span className="tnum text-[12.5px] text-ink3">
-              Page {num(page)} of {num(Math.max(pages, page))}
-            </span>
-            <Button
-              onClick={() => setPage((p) => p + 1)}
-              disabled={listed.loading || page >= pages || rows.length < PAGE_SIZE}
-            >
-              Older
-            </Button>
-          </div>
-        </div>
-      )}
     </Page>
   );
 }

@@ -33,3 +33,21 @@ export function peerStripe(id: string): string {
 export function truncate(s: string, n = 90): string {
   return s.length > n ? `${s.slice(0, n)}…` : s;
 }
+
+/**
+ * The heading a dated row sits under. Support reads a list by recency before
+ * it reads it by anything else, so the buckets are coarse and relative rather
+ * than calendar-accurate: "this week" means the last seven days, not since
+ * Monday, because the question being asked is "how stale is this".
+ */
+export function bucketOf(iso: string | null | undefined, now = Date.now()): string {
+  const t = iso ? Date.parse(iso) : Number.NaN;
+  if (Number.isNaN(t)) return "No date";
+  const days = Math.floor((now - t) / 86_400_000);
+  if (days <= 0) return "Today";
+  if (days === 1) return "Yesterday";
+  if (days < 7) return "Earlier this week";
+  if (days < 30) return "This month";
+  if (days < 365) return "Earlier this year";
+  return "Older";
+}
