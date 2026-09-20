@@ -47,3 +47,23 @@ describe("firstName", () => {
     expect(firstName("Ada")).toBe("Ada");
   });
 });
+
+describe("agent pattern from the environment", () => {
+  // A dotenv value is literal, so `\b` typed as `\\b` arrives as two
+  // characters and compiles to "backslash, then b" — matching nothing, and
+  // silently disabling every agent check in the app.
+  const collapse = (s: string) => s.replace(/\\\\/g, "\\");
+
+  it("a doubled escape matches nothing until it is collapsed", () => {
+    const doubled = String.raw`^(sisi|agent|bot)\\b`;
+    expect(new RegExp(doubled, "i").test("agent-main")).toBe(false);
+    expect(new RegExp(collapse(doubled), "i").test("agent-main")).toBe(true);
+  });
+
+  it("a correctly written pattern is left alone", () => {
+    const fine = String.raw`^(sisi|agent|bot)\b`;
+    expect(collapse(fine)).toBe(fine);
+    expect(new RegExp(collapse(fine), "i").test("agent-main")).toBe(true);
+    expect(new RegExp(collapse(fine), "i").test("intercom-6ab04917")).toBe(false);
+  });
+});

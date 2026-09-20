@@ -386,7 +386,26 @@ export function initials(id: string) {
   return clean.slice(0, 2).toUpperCase() || "??";
 }
 
-const AGENT_RE = new RegExp(import.meta.env.VITE_AGENT_PATTERN ?? "^(assistant|agent|bot|ai)\\b", "i");
+const DEFAULT_AGENT_PATTERN = "^(assistant|agent|bot|ai)\\b";
+
+/**
+ * A dotenv value is taken literally, so `\\b` in the file reaches us as two
+ * characters and compiles to "backslash, then b" — a pattern that matches
+ * nothing. It silently turned off every agent check: no Assistant chip, and
+ * the agent listed as a participant on every thread. Collapse the doubling,
+ * and fall back rather than throw on a pattern that will not compile.
+ */
+function agentPattern(): RegExp {
+  const raw = import.meta.env.VITE_AGENT_PATTERN;
+  const source = typeof raw === "string" && raw.trim() ? raw.replace(/\\\\/g, "\\") : DEFAULT_AGENT_PATTERN;
+  try {
+    return new RegExp(source, "i");
+  } catch {
+    return new RegExp(DEFAULT_AGENT_PATTERN, "i");
+  }
+}
+
+const AGENT_RE = agentPattern();
 export const isAgent = (id: string) => AGENT_RE.test(id);
 
 export function Avatar({
