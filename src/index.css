@@ -1,0 +1,115 @@
+@import "tailwindcss";
+
+/* AMÒYE — ported verbatim from the Claude Design project "Premium SaaS
+   redesign" (Amoye Console.dc.html). Dark is the base; the light theme is a
+   full token swap, not an inversion.
+
+   Four accents carry epistemic state and nothing else:
+     a3  they said it       a2  worked out
+     a1  best guess         warn  doesn't add up                            */
+:root {
+  --bg: oklch(0.185 0.012 75);
+  --panel: oklch(0.225 0.012 75);
+  --panel2: oklch(0.262 0.012 75);
+  --ink: oklch(0.965 0.006 85);
+  --ink2: oklch(0.775 0.010 80);
+  --ink3: oklch(0.640 0.012 80);
+  --line: oklch(0.318 0.012 75);
+  --line2: oklch(0.420 0.014 75);
+  --a1: oklch(0.720 0.150 55);
+  --a2: oklch(0.720 0.150 245);
+  --a3: oklch(0.720 0.130 155);
+  --warn: oklch(0.700 0.170 20);
+  --a1soft: oklch(0.320 0.055 55);
+  --a2soft: oklch(0.320 0.055 245);
+  --a3soft: oklch(0.320 0.050 155);
+  --warnsoft: oklch(0.330 0.065 20);
+  --shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 8px 24px -12px rgba(0, 0, 0, 0.55);
+}
+
+[data-hx="light"] {
+  --bg: oklch(0.975 0.006 85);
+  --panel: oklch(1 0 0);
+  --panel2: oklch(0.968 0.007 85);
+  --ink: oklch(0.235 0.014 65);
+  --ink2: oklch(0.470 0.012 65);
+  --ink3: oklch(0.605 0.010 65);
+  --line: oklch(0.905 0.008 75);
+  --line2: oklch(0.835 0.010 75);
+  --a1: oklch(0.585 0.165 50);
+  --a2: oklch(0.545 0.165 250);
+  --a3: oklch(0.520 0.120 155);
+  --warn: oklch(0.560 0.180 22);
+  --a1soft: oklch(0.955 0.035 55);
+  --a2soft: oklch(0.955 0.030 250);
+  --a3soft: oklch(0.955 0.030 155);
+  --warnsoft: oklch(0.955 0.035 22);
+  --shadow: 0 1px 2px rgba(60, 50, 35, 0.06), 0 10px 24px -14px rgba(60, 50, 35, 0.22);
+}
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-panel: var(--panel);
+  --color-panel2: var(--panel2);
+  --color-ink: var(--ink);
+  --color-ink2: var(--ink2);
+  --color-ink3: var(--ink3);
+  --color-line: var(--line);
+  --color-line2: var(--line2);
+  --color-a1: var(--a1);
+  --color-a2: var(--a2);
+  --color-a3: var(--a3);
+  --color-warn: var(--warn);
+  --font-sans: "Instrument Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+@layer base {
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--font-sans);
+    font-feature-settings: "ss01";
+    -webkit-font-smoothing: antialiased;
+  }
+
+  button, input, textarea, select { font: inherit; color: inherit; }
+  a { color: var(--a2); text-decoration: none; }
+  a:hover { color: var(--a1); }
+  :focus-visible { outline: 2px solid var(--a2); outline-offset: 2px; border-radius: 4px; }
+  input::placeholder, textarea::placeholder { color: var(--ink3); }
+
+  ::-webkit-scrollbar { width: 10px; height: 10px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb {
+    background: var(--line2);
+    border: 3px solid transparent;
+    background-clip: content-box;
+    border-radius: 9999px;
+  }
+}
+
+@keyframes hx-fade { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+@keyframes hx-pulse { 0%, 100% { opacity: 0.35; } 50% { opacity: 1; } }
+@keyframes hx-blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
+
+@layer utilities {
+  .hx-fade { animation: hx-fade 0.25s ease both; }
+  .hx-pulse { animation: hx-pulse 2.4s ease-in-out infinite; }
+  .hx-blink { animation: hx-blink 1s step-end infinite; }
+  .tnum { font-variant-numeric: tabular-nums; }
+  .mono { font-family: var(--font-mono); }
+
+  /* Epistemic level inside running prose. */
+  .u-explicit      { text-decoration: underline solid  var(--a3);   text-underline-offset: 4px; text-decoration-thickness: 2px; }
+  .u-deductive     { text-decoration: underline dashed var(--a2);   text-underline-offset: 4px; text-decoration-thickness: 2px; }
+  .u-inductive     { text-decoration: underline dotted var(--a1);   text-underline-offset: 4px; text-decoration-thickness: 2px; }
+  .u-contradiction { text-decoration: underline double var(--warn); text-underline-offset: 4px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * { animation: none !important; transition: none !important; }
+}

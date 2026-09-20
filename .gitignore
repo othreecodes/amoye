@@ -1,0 +1,10 @@
+node_modules
+dist
+shots/
+.env.local
+.env.*.local
+*.local
+.DS_Store
+
+# screenshot output from ops/shot.mjs
+docs/img/*.tmp.png

@@ -1,0 +1,1461 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:oklch(0.185 0.012 75); --panel:oklch(0.225 0.012 75); --panel2:oklch(0.262 0.012 75);
+  --ink:oklch(0.965 0.006 85); --ink2:oklch(0.775 0.010 80); --ink3:oklch(0.640 0.012 80);
+  --line:oklch(0.318 0.012 75); --line2:oklch(0.420 0.014 75);
+  --a1:oklch(0.720 0.150 55); --a2:oklch(0.720 0.150 245); --a3:oklch(0.720 0.130 155); --warn:oklch(0.700 0.170 20);
+  --a1soft:oklch(0.320 0.055 55); --a2soft:oklch(0.320 0.055 245); --a3soft:oklch(0.320 0.050 155); --warnsoft:oklch(0.330 0.065 20);
+  --shadow:0 1px 2px rgba(0,0,0,.4),0 8px 24px -12px rgba(0,0,0,.55);
+}
+[data-hx="light"]{
+  --bg:oklch(0.975 0.006 85); --panel:oklch(1 0 0); --panel2:oklch(0.968 0.007 85);
+  --ink:oklch(0.235 0.014 65); --ink2:oklch(0.470 0.012 65); --ink3:oklch(0.605 0.010 65);
+  --line:oklch(0.905 0.008 75); --line2:oklch(0.835 0.010 75);
+  --a1:oklch(0.585 0.165 50); --a2:oklch(0.545 0.165 250); --a3:oklch(0.520 0.120 155); --warn:oklch(0.560 0.180 22);
+  --a1soft:oklch(0.955 0.035 55); --a2soft:oklch(0.955 0.030 250); --a3soft:oklch(0.955 0.030 155); --warnsoft:oklch(0.955 0.035 22);
+  --shadow:0 1px 2px rgba(60,50,35,.06),0 10px 24px -14px rgba(60,50,35,.22);
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:'Instrument Sans',ui-sans-serif,system-ui,sans-serif;-webkit-font-smoothing:antialiased;font-feature-settings:"ss01";}
+button,input,textarea,select{font:inherit;color:inherit}
+a{color:var(--a2);text-decoration:none}
+a:hover{color:var(--a1)}
+:focus-visible{outline:2px solid var(--a2);outline-offset:2px;border-radius:4px}
+input::placeholder,textarea::placeholder{color:var(--ink3)}
+@keyframes hx-fade{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+@keyframes hx-pulse{0%,100%{opacity:.35}50%{opacity:1}}
+@keyframes hx-blink{0%,100%{opacity:1}50%{opacity:0}}
+@media (prefers-reduced-motion: reduce){*{animation:none !important;transition:none !important}}
+</style>
+</helmet>
+
+<div data-hx="{{ theme }}" style="min-height:100vh;background:var(--bg);color:var(--ink);display:flex;align-items:stretch">
+
+  <sc-if value="{{ showSide }}" hint-placeholder-val="{{ true }}">
+    <aside style="width:244px;flex-shrink:0;border-right:1px solid var(--line);background:var(--panel);position:sticky;top:0;height:100vh;display:flex;flex-direction:column">
+      <div style="display:flex;align-items:center;gap:10px;padding:16px 18px 14px">
+        <div style="width:26px;height:26px;border-radius:7px;background:var(--a1);display:flex;align-items:center;justify-content:center;flex-shrink:0">
+          <div style="width:9px;height:9px;border-radius:2px;background:var(--panel)"></div>
+        </div>
+        <span style="font-weight:600;font-size:15.5px;letter-spacing:-0.01em;flex:1">Amòye</span>
+        <button onClick="{{ toggleRail }}" title="Collapse sidebar" style="width:26px;height:26px;border:1px solid var(--line);background:transparent;border-radius:7px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:2px;flex-shrink:0" style-hover="border-color:var(--line2)">
+          <span style="width:2px;height:12px;border-radius:1px;background:var(--ink3)"></span>
+          <span style="width:6px;height:12px;border-radius:1px;border:1px solid var(--ink3)"></span>
+        </button>
+      </div>
+      <div style="padding:0 12px 12px">
+        <button onClick="{{ toggleWs }}" style="width:100%;display:flex;align-items:center;gap:9px;background:var(--panel2);border:1px solid var(--line);border-radius:9px;padding:8px 10px;cursor:pointer" style-hover="border-color:var(--line2)">
+          <span style="width:6px;height:6px;border-radius:50%;background:var(--a3);flex-shrink:0"></span>
+          <span style="font-size:13px;font-weight:500;flex:1;text-align:left;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ workspace }}</span>
+          <span style="color:var(--ink3);font-size:10px">▾</span>
+        </button>
+      </div>
+      <nav style="flex:1;overflow:auto;padding:0 12px 16px">
+        <sc-for list="{{ navGroups }}" as="g" hint-placeholder-count="4">
+          <div style="margin-bottom:16px">
+            <div style="font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink3);padding:0 8px 7px">{{ g.label }}</div>
+            <sc-for list="{{ g.items }}" as="i" hint-placeholder-count="3">
+              <sc-if value="{{ i.on }}" hint-placeholder-val="{{ true }}">
+                <button onClick="{{ i.go }}" style="width:100%;display:flex;align-items:center;gap:10px;background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:7px 10px;margin-bottom:2px;cursor:pointer;text-align:left;color:var(--a1)">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:17px;height:17px;flex-shrink:0">
+                    <sc-for list="{{ i.icon }}" as="sh" hint-placeholder-count="2">
+                      <sc-if value="{{ sh.isPath }}" hint-placeholder-val="{{ true }}"><path d="{{ sh.d }}"></path></sc-if>
+                      <sc-if value="{{ sh.isCircle }}"><circle cx="{{ sh.cx }}" cy="{{ sh.cy }}" r="{{ sh.r }}"></circle></sc-if>
+                      <sc-if value="{{ sh.isRect }}"><rect x="{{ sh.x }}" y="{{ sh.y }}" width="{{ sh.w }}" height="{{ sh.h }}" rx="{{ sh.rx }}"></rect></sc-if>
+                      <sc-if value="{{ sh.isLine }}"><line x1="{{ sh.x1 }}" y1="{{ sh.y1 }}" x2="{{ sh.x2 }}" y2="{{ sh.y2 }}"></line></sc-if>
+                    </sc-for>
+                  </svg>
+                  <span style="flex:1;font-size:13.5px;font-weight:600;color:var(--ink)">{{ i.label }}</span>
+                  <sc-if value="{{ i.hasBadge }}"><span style="font-family:'JetBrains Mono',monospace;font-size:10.5px;color:var(--a1);border:1px solid var(--a1);border-radius:5px;padding:0 5px">{{ i.badge }}</span></sc-if>
+                </button>
+              </sc-if>
+              <sc-if value="{{ i.off }}">
+                <button onClick="{{ i.go }}" style="width:100%;display:flex;align-items:center;gap:10px;background:transparent;border:1px solid transparent;border-radius:8px;padding:7px 10px;margin-bottom:2px;cursor:pointer;text-align:left;color:var(--ink3)" style-hover="background:var(--panel2);color:var(--ink2)">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:17px;height:17px;flex-shrink:0">
+                    <sc-for list="{{ i.icon }}" as="sh" hint-placeholder-count="2">
+                      <sc-if value="{{ sh.isPath }}" hint-placeholder-val="{{ true }}"><path d="{{ sh.d }}"></path></sc-if>
+                      <sc-if value="{{ sh.isCircle }}"><circle cx="{{ sh.cx }}" cy="{{ sh.cy }}" r="{{ sh.r }}"></circle></sc-if>
+                      <sc-if value="{{ sh.isRect }}"><rect x="{{ sh.x }}" y="{{ sh.y }}" width="{{ sh.w }}" height="{{ sh.h }}" rx="{{ sh.rx }}"></rect></sc-if>
+                      <sc-if value="{{ sh.isLine }}"><line x1="{{ sh.x1 }}" y1="{{ sh.y1 }}" x2="{{ sh.x2 }}" y2="{{ sh.y2 }}"></line></sc-if>
+                    </sc-for>
+                  </svg>
+                  <span style="flex:1;font-size:13.5px;font-weight:500;color:var(--ink2)">{{ i.label }}</span>
+                  <sc-if value="{{ i.hasBadge }}"><span style="font-family:'JetBrains Mono',monospace;font-size:10.5px;color:var(--a1);border:1px solid var(--a1);border-radius:5px;padding:0 5px">{{ i.badge }}</span></sc-if>
+                </button>
+              </sc-if>
+            </sc-for>
+          </div>
+        </sc-for>
+      </nav>
+      <div style="border-top:1px solid var(--line);padding:12px 18px;display:flex;align-items:center;gap:8px">
+        <span style="width:7px;height:7px;border-radius:50%;background:var(--a3);animation:hx-pulse 2.4s ease-in-out infinite"></span>
+        <span style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--ink2);flex:1">connected</span>
+        <span style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--ink3)">v2.4</span>
+      </div>
+    </aside>
+  </sc-if>
+
+  <sc-if value="{{ showRail }}">
+    <aside style="width:62px;flex-shrink:0;border-right:1px solid var(--line);background:var(--panel);position:sticky;top:0;height:100vh;display:flex;flex-direction:column;align-items:center;padding:14px 0">
+      <div style="width:28px;height:28px;border-radius:8px;background:var(--a1);display:flex;align-items:center;justify-content:center;margin-bottom:14px;flex-shrink:0">
+        <div style="width:9px;height:9px;border-radius:2px;background:var(--panel)"></div>
+      </div>
+      <button onClick="{{ toggleRail }}" title="Expand sidebar" style="width:30px;height:30px;border:1px solid var(--line);background:transparent;border-radius:8px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:2px;margin-bottom:14px" style-hover="border-color:var(--line2)">
+        <span style="width:6px;height:12px;border-radius:1px;border:1px solid var(--ink3)"></span>
+        <span style="width:2px;height:12px;border-radius:1px;background:var(--ink3)"></span>
+      </button>
+      <nav style="flex:1;overflow:auto;display:flex;flex-direction:column;align-items:center;gap:4px;width:100%;scrollbar-width:none">
+        <sc-for list="{{ navGroups }}" as="g" hint-placeholder-count="4">
+          <div style="width:22px;height:1px;background:var(--line);margin:6px 0"></div>
+          <sc-for list="{{ g.items }}" as="i" hint-placeholder-count="3">
+            <sc-if value="{{ i.on }}" hint-placeholder-val="{{ true }}">
+              <button onClick="{{ i.go }}" title="{{ i.label }}" style="width:38px;height:34px;border:1px solid var(--a1);background:var(--a1soft);border-radius:9px;cursor:pointer;color:var(--a1);display:flex;align-items:center;justify-content:center">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:17px;height:17px">
+                  <sc-for list="{{ i.icon }}" as="sh" hint-placeholder-count="2">
+                    <sc-if value="{{ sh.isPath }}" hint-placeholder-val="{{ true }}"><path d="{{ sh.d }}"></path></sc-if>
+                    <sc-if value="{{ sh.isCircle }}"><circle cx="{{ sh.cx }}" cy="{{ sh.cy }}" r="{{ sh.r }}"></circle></sc-if>
+                    <sc-if value="{{ sh.isRect }}"><rect x="{{ sh.x }}" y="{{ sh.y }}" width="{{ sh.w }}" height="{{ sh.h }}" rx="{{ sh.rx }}"></rect></sc-if>
+                    <sc-if value="{{ sh.isLine }}"><line x1="{{ sh.x1 }}" y1="{{ sh.y1 }}" x2="{{ sh.x2 }}" y2="{{ sh.y2 }}"></line></sc-if>
+                  </sc-for>
+                </svg>
+              </button>
+            </sc-if>
+            <sc-if value="{{ i.off }}">
+              <button onClick="{{ i.go }}" title="{{ i.label }}" style="width:38px;height:34px;border:1px solid transparent;background:transparent;border-radius:9px;cursor:pointer;color:var(--ink3);display:flex;align-items:center;justify-content:center" style-hover="background:var(--panel2);color:var(--ink)">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:17px;height:17px">
+                  <sc-for list="{{ i.icon }}" as="sh" hint-placeholder-count="2">
+                    <sc-if value="{{ sh.isPath }}" hint-placeholder-val="{{ true }}"><path d="{{ sh.d }}"></path></sc-if>
+                    <sc-if value="{{ sh.isCircle }}"><circle cx="{{ sh.cx }}" cy="{{ sh.cy }}" r="{{ sh.r }}"></circle></sc-if>
+                    <sc-if value="{{ sh.isRect }}"><rect x="{{ sh.x }}" y="{{ sh.y }}" width="{{ sh.w }}" height="{{ sh.h }}" rx="{{ sh.rx }}"></rect></sc-if>
+                    <sc-if value="{{ sh.isLine }}"><line x1="{{ sh.x1 }}" y1="{{ sh.y1 }}" x2="{{ sh.x2 }}" y2="{{ sh.y2 }}"></line></sc-if>
+                  </sc-for>
+                </svg>
+              </button>
+            </sc-if>
+          </sc-for>
+        </sc-for>
+      </nav>
+      <span style="width:7px;height:7px;border-radius:50%;background:var(--a3);animation:hx-pulse 2.4s ease-in-out infinite;margin-top:10px"></span>
+    </aside>
+  </sc-if>
+
+  <div style="flex:1;min-width:0;display:flex;flex-direction:column">
+  <header style="position:sticky;top:0;z-index:40;background:var(--panel);border-bottom:1px solid var(--line);display:flex;flex-direction:column">
+    <div style="display:flex;align-items:center;gap:12px;padding:8px 16px;min-height:56px;flex-wrap:wrap">
+      <sc-if value="{{ showMenuBtn }}">
+        <button onClick="{{ toggleMenu }}" title="Menu" style="width:32px;height:32px;border:1px solid var(--line);background:var(--panel2);border-radius:8px;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;flex-shrink:0">
+          <span style="width:13px;height:1.5px;background:var(--ink2)"></span>
+          <span style="width:13px;height:1.5px;background:var(--ink2)"></span>
+          <span style="width:13px;height:1.5px;background:var(--ink2)"></span>
+        </button>
+        <span style="font-weight:600;font-size:15px;letter-spacing:-0.01em">Amòye</span>
+      </sc-if>
+      <sc-if value="{{ showCrumb }}" hint-placeholder-val="{{ true }}">
+        <span style="font-size:13px;color:var(--ink3);flex-shrink:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ crumb }}</span>
+      </sc-if>
+      <div style="flex:1"></div>
+      <sc-if value="{{ showChrome }}" hint-placeholder-val="{{ true }}">
+        <div style="display:flex;align-items:center;gap:8px;background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:6px 10px;min-width:160px;max-width:280px;flex:1 1 160px" style-hover="border-color:var(--line2)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="width:14px;height:14px;color:var(--ink3);flex-shrink:0"><circle cx="11" cy="11" r="6.5"></circle><line x1="16" y1="16" x2="20.5" y2="20.5"></line></svg>
+          <input value="{{ q }}" onChange="{{ setQ }}" placeholder="Search anything" style="border:none;background:transparent;outline:none;font-size:13px;width:100%;min-width:0" />
+          <span style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--ink3);border:1px solid var(--line);border-radius:4px;padding:1px 4px;flex-shrink:0">⌘K</span>
+        </div>
+      </sc-if>
+      <button onClick="{{ toggleTheme }}" title="Appearance" style="width:32px;height:32px;border:1px solid var(--line);background:var(--panel2);border-radius:8px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0" style-hover="border-color:var(--line2)">
+        <span style="width:12px;height:12px;border-radius:50%;border:2px solid var(--ink2);background:linear-gradient(90deg,var(--ink2) 50%,transparent 50%)"></span>
+      </button>
+      <sc-if value="{{ showChrome }}" hint-placeholder-val="{{ true }}">
+        <div style="display:flex;align-items:center;gap:7px;padding-left:2px;flex-shrink:0">
+          <span style="width:7px;height:7px;border-radius:50%;background:var(--a3);animation:hx-pulse 2.4s ease-in-out infinite"></span>
+          <span style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--ink2)">live</span>
+        </div>
+      </sc-if>
+    </div>
+  </header>
+
+  <main style="flex:1;width:100%;max-width:1280px;margin:0 auto;padding:28px 20px 72px">
+
+    <!-- ══ TODAY ══ -->
+    <sc-if value="{{ isToday }}" hint-placeholder-val="{{ true }}">
+      <div style="animation:hx-fade .25s ease both">
+        <div style="display:flex;align-items:flex-end;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:22px">
+          <div>
+            <h1 style="margin:0 0 6px;font-size:26px;font-weight:600;letter-spacing:-0.02em">Today</h1>
+            <p style="margin:0;color:var(--ink2);font-size:14.5px;max-width:58ch;text-wrap:pretty">What Amòye has learned about the people you talk to — and whether it is keeping up.</p>
+          </div>
+          <div style="display:flex;gap:8px">
+            <button onClick="{{ goAsk }}" style="border:1px solid var(--line);background:var(--panel);color:var(--ink);font-size:13px;font-weight:500;padding:8px 13px;border-radius:8px;cursor:pointer" style-hover="border-color:var(--line2)">Ask a question</button>
+            <button onClick="{{ goBacklog }}" style="border:none;background:var(--ink);color:var(--bg);font-size:13px;font-weight:600;padding:9px 14px;border-radius:8px;cursor:pointer">Check the backlog</button>
+          </div>
+        </div>
+
+        <sc-if value="{{ isEmptyWs }}">
+          <div style="border:1px solid var(--line);border-radius:14px;background:var(--panel);padding:48px 28px;text-align:center;box-shadow:var(--shadow)">
+            <div style="display:flex;align-items:center;justify-content:center;gap:12px;margin-bottom:22px">
+              <div style="width:30px;height:30px;border-radius:9px;border:1.5px solid var(--line2)"></div>
+              <div style="width:34px;height:1.5px;background:var(--line2)"></div>
+              <div style="width:30px;height:30px;border-radius:50%;border:1.5px dashed var(--line2)"></div>
+              <div style="width:34px;height:1.5px;background:var(--line2)"></div>
+              <div style="width:30px;height:30px;border-radius:9px;background:var(--a1soft);border:1.5px solid var(--a1)"></div>
+            </div>
+            <h2 style="margin:0 0 8px;font-size:19px;font-weight:600">Nothing known yet</h2>
+            <p style="margin:0 auto 20px;max-width:46ch;color:var(--ink2);font-size:14px;line-height:1.55;text-wrap:pretty">Send a conversation in and Amòye reads it, works out what it can about the people in it, then keeps that picture up to date. The first conclusions usually appear a minute or two after the first message.</p>
+            <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
+              <button style="border:none;background:var(--ink);color:var(--bg);font-size:13px;font-weight:600;padding:9px 15px;border-radius:8px;cursor:pointer">Add your first conversation</button>
+              <button onClick="{{ goDev }}" style="border:1px solid var(--line);background:var(--panel);font-size:13px;font-weight:500;padding:9px 15px;border-radius:8px;cursor:pointer">Connect from code</button>
+            </div>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ hasData }}" hint-placeholder-val="{{ true }}">
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:14px;margin-bottom:18px">
+            <sc-for list="{{ stats }}" as="k" hint-placeholder-count="4">
+              <div style="border:1px solid var(--line);border-radius:12px;background:var(--panel);padding:16px 16px 14px;box-shadow:var(--shadow)">
+                <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:10px">
+                  <span style="font-family:'JetBrains Mono',monospace;font-size:10.5px;letter-spacing:.09em;text-transform:uppercase;color:var(--ink3)">{{ k.label }}</span>
+                  <span style="font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:500;color:{{ k.deltaColor }}">{{ k.delta }}</span>
+                </div>
+                <div style="display:flex;align-items:flex-end;gap:10px;justify-content:space-between">
+                  <div style="font-size:30px;font-weight:600;letter-spacing:-0.03em;font-variant-numeric:tabular-nums;line-height:1">{{ k.value }}</div>
+                  <svg viewBox="0 0 80 26" preserveAspectRatio="none" style="width:80px;height:26px;overflow:visible">
+                    <polyline points="{{ k.spark }}" fill="none" stroke="{{ k.deltaColor }}" stroke-width="1.5" stroke-linejoin="round" vector-effect="non-scaling-stroke"></polyline>
+                  </svg>
+                </div>
+                <div style="margin-top:8px;font-size:12.5px;color:var(--ink3)">{{ k.sub }}</div>
+              </div>
+            </sc-for>
+          </div>
+
+          <div style="display:grid;grid-template-columns:{{ todayCols }};gap:16px;align-items:start">
+            <div style="display:flex;flex-direction:column;gap:16px;min-width:0">
+
+              <div style="border:1px solid var(--line);border-radius:14px;background:var(--panel);box-shadow:var(--shadow);overflow:hidden">
+                <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:15px 18px;border-bottom:1px solid var(--line);flex-wrap:wrap">
+                  <div>
+                    <div style="font-size:15px;font-weight:600">What it learned, day by day</div>
+                    <div style="font-size:12.5px;color:var(--ink3);margin-top:2px">Conclusions added, last 14 days</div>
+                  </div>
+                  <div style="display:flex;gap:12px;flex-wrap:wrap">
+                    <sc-for list="{{ levelKey }}" as="lk" hint-placeholder-count="3">
+                      <div style="display:flex;align-items:center;gap:6px">
+                        <span style="width:9px;height:9px;border-radius:2px;background:{{ lk.color }}"></span>
+                        <span style="font-size:11.5px;color:var(--ink2)">{{ lk.word }}</span>
+                      </div>
+                    </sc-for>
+                  </div>
+                </div>
+                <div style="padding:18px 18px 12px">
+                  <div style="display:flex;align-items:flex-end;gap:6px;height:150px">
+                    <sc-for list="{{ series }}" as="d" hint-placeholder-count="14">
+                      <div style="flex:1;display:flex;flex-direction:column;justify-content:flex-end;gap:2px;height:100%;min-width:0" title="{{ d.title }}">
+                        <div style="height:{{ d.h1 }};background:var(--a1);border-radius:3px 3px 0 0;min-height:2px"></div>
+                        <div style="height:{{ d.h2 }};background:var(--a2)"></div>
+                        <div style="height:{{ d.h3 }};background:var(--a3);border-radius:0 0 3px 3px"></div>
+                      </div>
+                    </sc-for>
+                  </div>
+                  <div style="display:flex;gap:6px;margin-top:8px">
+                    <sc-for list="{{ series }}" as="d" hint-placeholder-count="14">
+                      <div style="flex:1;text-align:center;font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--ink3);min-width:0;overflow:hidden">{{ d.label }}</div>
+                    </sc-for>
+                  </div>
+                </div>
+              </div>
+
+              <div style="border:1px solid var(--line);border-radius:14px;background:var(--panel);box-shadow:var(--shadow)">
+                <div style="display:flex;align-items:center;justify-content:space-between;padding:15px 18px;border-bottom:1px solid var(--line)">
+                  <div style="font-size:15px;font-weight:600">Learned in the last few hours</div>
+                  <button onClick="{{ goKnow }}" style="border:none;background:transparent;color:var(--a2);font-size:13px;font-weight:500;cursor:pointer;padding:0">See all →</button>
+                </div>
+                <sc-for list="{{ recent }}" as="c" hint-placeholder-count="3">
+                  <div style="padding:14px 18px;border-bottom:1px solid var(--line);display:flex;gap:14px;align-items:flex-start">
+                    <div style="display:flex;gap:2px;align-items:center;padding-top:3px;flex-shrink:0">
+                      <sc-for list="{{ c.cells }}" as="cell" hint-placeholder-count="3">
+                        <sc-if value="{{ cell.on }}" hint-placeholder-val="{{ true }}"><span style="width:6px;height:15px;border-radius:1px;background:{{ c.color }}"></span></sc-if>
+                        <sc-if value="{{ cell.off }}"><span style="width:6px;height:15px;border-radius:1px;border:1px solid var(--line2)"></span></sc-if>
+                      </sc-for>
+                      <sc-if value="{{ c.isC }}"><span style="width:15px;height:15px;border:1.5px solid var(--warn);transform:rotate(45deg);margin-left:2px;background:linear-gradient(90deg,transparent 47%,var(--warn) 47%,var(--warn) 53%,transparent 53%)"></span></sc-if>
+                    </div>
+                    <div style="min-width:0;flex:1">
+                      <div style="font-size:15px;line-height:1.45;padding-bottom:2px;border-bottom:1.5px {{ c.ul }} {{ c.color }};display:inline;text-wrap:pretty">{{ c.text }}</div>
+                      <div style="display:flex;align-items:center;gap:10px;margin-top:8px;flex-wrap:wrap">
+                        <span style="font-size:12px;color:var(--ink3)">{{ c.meta }}</span>
+                        <span style="font-size:11.5px;font-weight:600;color:{{ c.color }};background:{{ c.soft }};border-radius:20px;padding:2px 9px">{{ c.word }}</span>
+                        <span style="font-size:11.5px;color:var(--ink3)">{{ c.sure }}</span>
+                      </div>
+                    </div>
+                    <button onClick="{{ c.open }}" style="border:1px solid var(--line);background:transparent;color:var(--ink2);font-size:12px;padding:5px 10px;border-radius:7px;cursor:pointer;flex-shrink:0" style-hover="border-color:var(--line2);color:var(--ink)">{{ c.person }}</button>
+                  </div>
+                </sc-for>
+              </div>
+            </div>
+
+            <div style="display:flex;flex-direction:column;gap:16px;min-width:0">
+              <div style="border:1px solid var(--warn);border-radius:14px;background:var(--warnsoft);padding:16px 17px">
+                <div style="display:flex;align-items:center;gap:9px;margin-bottom:8px">
+                  <span style="width:14px;height:14px;border:1.5px solid var(--warn);transform:rotate(45deg);background:linear-gradient(90deg,transparent 47%,var(--warn) 47%,var(--warn) 53%,transparent 53%)"></span>
+                  <span style="font-size:14px;font-weight:600;color:var(--warn)">Three things disagree</span>
+                </div>
+                <p style="margin:0 0 12px;font-size:13.5px;line-height:1.5;color:var(--ink2)">Two things we believe can't both be true. Worth resolving before repeating any of it to someone.</p>
+                <button onClick="{{ goContra }}" style="border:1px solid var(--warn);background:transparent;color:var(--warn);font-size:12.5px;font-weight:600;padding:6px 11px;border-radius:7px;cursor:pointer">Resolve them</button>
+              </div>
+
+              <div style="border:1px solid var(--line);border-radius:14px;background:var(--panel);box-shadow:var(--shadow);padding:16px 17px">
+                <div style="font-size:15px;font-weight:600;margin-bottom:4px">How solid is what we know</div>
+                <div style="font-size:12.5px;color:var(--ink3);margin-bottom:14px">114 conclusions across everyone</div>
+                <div style="display:flex;height:12px;border-radius:6px;overflow:hidden;gap:2px;margin-bottom:14px">
+                  <sc-for list="{{ mix }}" as="m" hint-placeholder-count="4">
+                    <div style="width:{{ m.w }};background:{{ m.color }}" title="{{ m.title }}"></div>
+                  </sc-for>
+                </div>
+                <sc-for list="{{ mix }}" as="m" hint-placeholder-count="4">
+                  <div style="display:flex;align-items:center;gap:10px;padding:6px 0;border-top:1px solid var(--line)">
+                    <span style="width:9px;height:9px;border-radius:2px;background:{{ m.color }};flex-shrink:0"></span>
+                    <span style="font-size:13px;flex:1">{{ m.word }}</span>
+                    <span style="font-family:'JetBrains Mono',monospace;font-size:12.5px;font-variant-numeric:tabular-nums;color:var(--ink2)">{{ m.n }}</span>
+                  </div>
+                </sc-for>
+              </div>
+
+              <div style="border:1px solid var(--line);border-radius:14px;background:var(--panel);box-shadow:var(--shadow);padding:16px 17px">
+                <div style="font-size:15px;font-weight:600;margin-bottom:12px">What it talks about</div>
+                <sc-for list="{{ topics }}" as="t" hint-placeholder-count="5">
+                  <div style="margin-bottom:11px">
+                    <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:5px">
+                      <span>{{ t.name }}</span>
+                      <span style="font-family:'JetBrains Mono',monospace;color:var(--ink3);font-size:12px">{{ t.n }}</span>
+                    </div>
+                    <div style="height:7px;border-radius:4px;background:var(--panel2);overflow:hidden">
+                      <div style="height:100%;width:{{ t.w }};background:{{ t.color }};border-radius:4px"></div>
+                    </div>
+                  </div>
+                </sc-for>
+              </div>
+
+              <div style="border:1px solid var(--line);border-radius:14px;background:var(--panel);box-shadow:var(--shadow)">
+                <div style="padding:14px 17px;border-bottom:1px solid var(--line);font-size:15px;font-weight:600">Newest {{ vPeopleLower }}</div>
+                <sc-for list="{{ newest }}" as="p" hint-placeholder-count="4">
+                  <button onClick="{{ p.open }}" style="width:100%;display:flex;align-items:center;gap:11px;padding:10px 17px;background:transparent;border:none;border-bottom:1px solid var(--line);cursor:pointer;text-align:left" style-hover="background:var(--panel2)">
+                    <span style="width:28px;height:28px;border-radius:8px;background:{{ p.soft }};border:1px solid {{ p.color }};color:{{ p.color }};display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:600;flex-shrink:0">{{ p.initials }}</span>
+                    <span style="flex:1;font-size:13.5px;font-weight:500;min-width:0">{{ p.name }}</span>
+                    <span style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--ink3)">{{ p.ago }}</span>
+                  </button>
+                </sc-for>
+              </div>
+            </div>
+          </div>
+        </sc-if>
+      </div>
+    </sc-if>
+
+    <!-- ══ PEOPLE ══ -->
+    <sc-if value="{{ isPeople }}">
+      <div style="animation:hx-fade .25s ease both">
+        <div style="display:flex;align-items:flex-end;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:18px">
+          <div>
+            <h1 style="margin:0 0 6px;font-size:26px;font-weight:600;letter-spacing:-0.02em">{{ vPeople }}</h1>
+            <p style="margin:0;color:var(--ink2);font-size:14.5px">Everyone Amòye is building a picture of.</p>
+          </div>
+          <button style="border:none;background:var(--ink);color:var(--bg);font-size:13px;font-weight:600;padding:9px 14px;border-radius:8px;cursor:pointer;display:inline-flex;align-items:center;gap:7px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" style="width:14px;height:14px"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>Add someone</button>
+        </div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px">
+          <div style="display:flex;align-items:center;gap:8px;background:var(--panel);border:1px solid var(--line);border-radius:9px;padding:8px 12px;flex:1;min-width:220px">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="width:14px;height:14px;color:var(--ink3);flex-shrink:0"><circle cx="11" cy="11" r="6.5"></circle><line x1="16" y1="16" x2="20.5" y2="20.5"></line></svg>
+            <input value="{{ q }}" onChange="{{ setQ }}" placeholder="Find someone by name or by what they said" style="border:none;background:transparent;outline:none;font-size:13.5px;width:100%;min-width:0" />
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;background:var(--panel);border:1px solid var(--line);border-radius:9px;padding:8px 12px">
+            <span style="font-family:'JetBrains Mono',monospace;font-size:11.5px;color:var(--ink3)">{{ peopleCount }}</span>
+          </div>
+        </div>
+        <div style="border:1px solid var(--line);border-radius:14px;background:var(--panel);box-shadow:var(--shadow);overflow:hidden">
+          <sc-if value="{{ showTableHead }}" hint-placeholder-val="{{ true }}">
+            <div style="display:grid;grid-template-columns:{{ peopleCols }};gap:14px;padding:10px 18px;border-bottom:1px solid var(--line);background:var(--panel2)">
+              <span style="font-family:'JetBrains Mono',monospace;font-size:10.5px;letter-spacing:.09em;text-transform:uppercase;color:var(--ink3)">Person</span>
+              <span style="font-family:'JetBrains Mono',monospace;font-size:10.5px;letter-spacing:.09em;text-transform:uppercase;color:var(--ink3)">What we know</span>
+              <span style="font-family:'JetBrains Mono',monospace;font-size:10.5px;letter-spacing:.09em;text-transform:uppercase;color:var(--ink3)">Activity</span>
+              <span style="font-family:'JetBrains Mono',monospace;font-size:10.5px;letter-spacing:.09em;text-transform:uppercase;color:var(--ink3);text-align:right">Last seen</span>
+            </div>
+          </sc-if>
+          <sc-for list="{{ people }}" as="p" hint-placeholder-count="6">
+            <button onClick="{{ p.open }}" style="width:100%;display:grid;grid-template-columns:{{ peopleCols }};gap:14px;align-items:center;padding:13px 18px;background:transparent;border:none;border-bottom:1px solid var(--line);cursor:pointer;text-align:left" style-hover="background:var(--panel2)">
+              <span style="display:flex;align-items:center;gap:12px;min-width:0">
+                <span style="width:34px;height:34px;border-radius:10px;background:{{ p.soft }};border:1px solid {{ p.color }};color:{{ p.color }};display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:600;flex-shrink:0">{{ p.initials }}</span>
+                <span style="min-width:0">
+                  <span style="display:flex;align-items:center;gap:7px">
+                    <span style="font-size:14.5px;font-weight:600">{{ p.name }}</span>
+                    <sc-if value="{{ p.isAgent }}"><span style="font-family:'JetBrains Mono',monospace;font-size:10px;text-transform:uppercase;letter-spacing:.06em;border:1px dashed var(--line2);color:var(--ink3);border-radius:5px;padding:1px 5px">AI agent</span></sc-if>
+                  </span>
+                  <span style="display:block;font-size:12.5px;color:var(--ink3);margin-top:2px">{{ p.tenure }} · {{ p.convs }}</span>
+                </span>
+              </span>
+              <span style="display:flex;align-items:center;gap:10px;min-width:0">
+                <span style="display:flex;height:8px;width:88px;border-radius:5px;overflow:hidden;gap:1.5px;flex-shrink:0">
+                  <sc-for list="{{ p.mix }}" as="m" hint-placeholder-count="3">
+                    <span style="width:{{ m.w }};background:{{ m.color }}"></span>
+                  </sc-for>
+                </span>
+                <span style="font-size:13px;color:var(--ink2);white-space:nowrap">{{ p.known }}</span>
+                <sc-if value="{{ p.contra }}"><span style="width:11px;height:11px;border:1.5px solid var(--warn);transform:rotate(45deg);flex-shrink:0" title="Something disagrees"></span></sc-if>
+              </span>
+              <sc-if value="{{ showSpark }}" hint-placeholder-val="{{ true }}">
+                <span>
+                  <svg viewBox="0 0 100 24" preserveAspectRatio="none" style="width:100%;max-width:120px;height:24px">
+                    <polyline points="{{ p.spark }}" fill="none" stroke="{{ p.color }}" stroke-width="1.5" vector-effect="non-scaling-stroke" stroke-linejoin="round"></polyline>
+                  </svg>
+                </span>
+              </sc-if>
+              <span style="font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--ink3);text-align:right">{{ p.ago }}</span>
+            </button>
+          </sc-for>
+        </div>
+      </div>
+    </sc-if>
+
+    <!-- ══ PERSON DETAIL ══ -->
+    <sc-if value="{{ isPerson }}">
+      <div style="animation:hx-fade .25s ease both">
+        <button onClick="{{ goPeople }}" style="border:none;background:transparent;color:var(--ink3);font-size:13px;cursor:pointer;padding:0;margin-bottom:14px">← {{ vPeople }}</button>
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:20px">
+          <div style="display:flex;gap:14px;align-items:center;min-width:0">
+            <div style="width:52px;height:52px;border-radius:14px;background:{{ person.soft }};border:1.5px solid {{ person.color }};color:{{ person.color }};display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;font-size:17px;font-weight:600;flex-shrink:0">{{ person.initials }}</div>
+            <div style="min-width:0">
+              <h1 style="margin:0 0 4px;font-size:25px;font-weight:600;letter-spacing:-0.02em">{{ person.name }}</h1>
+              <div style="font-size:13.5px;color:var(--ink3)">{{ person.tenure }} · {{ person.convs }} · {{ person.known }}</div>
+            </div>
+          </div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <button onClick="{{ toggleCtx }}" style="border:1px solid var(--line);background:var(--panel);font-size:13px;font-weight:500;padding:8px 13px;border-radius:8px;cursor:pointer" style-hover="border-color:var(--line2)">What an agent sees</button>
+            <button onClick="{{ goAskPerson }}" style="border:none;background:var(--ink);color:var(--bg);font-size:13px;font-weight:600;padding:9px 14px;border-radius:8px;cursor:pointer">Ask about {{ person.first }}</button>
+          </div>
+        </div>
+
+        <div style="display:grid;grid-template-columns:{{ personCols }};gap:16px;align-items:start">
+          <div style="display:flex;flex-direction:column;gap:16px;min-width:0">
+            <div style="border:1px solid var(--line);border-radius:14px;background:var(--panel);box-shadow:var(--shadow);padding:20px 22px">
+              <div style="font-family:'JetBrains Mono',monospace;font-size:10.5px;letter-spacing:.09em;text-transform:uppercase;color:var(--ink3);margin-bottom:12px">In a nutshell</div>
+              <p style="margin:0;font-size:17px;line-height:1.7;text-wrap:pretty">
+                <span style="border-bottom:1.5px solid var(--a3)">Adaeze has been with us 14 months.</span>
+                <span style="border-bottom:1.5px solid var(--a3)">She banks with GTBank</span>,
+                <span style="border-bottom:1.5px dashed var(--a2)">is saving toward a car</span>, and
+                <span style="border-bottom:1.5px dotted var(--a1)">gets impatient when a transfer stalls</span>.
+                <span style="border-bottom:1.5px dotted var(--a1)">She prefers WhatsApp to email</span>, and
+                <span style="border-bottom:1.5px solid var(--a3)">the last time you spoke she was still waiting on a reversal</span>.
+              </p>
+              <div style="display:flex;gap:16px;flex-wrap:wrap;margin-top:16px;padding-top:14px;border-top:1px solid var(--line)">
+                <span style="display:flex;align-items:center;gap:7px;font-size:12px;color:var(--ink2)"><span style="width:22px;border-bottom:1.5px solid var(--a3)"></span> she said it</span>
+                <span style="display:flex;align-items:center;gap:7px;font-size:12px;color:var(--ink2)"><span style="width:22px;border-bottom:1.5px dashed var(--a2)"></span> follows from it</span>
+                <span style="display:flex;align-items:center;gap:7px;font-size:12px;color:var(--ink2)"><span style="width:22px;border-bottom:1.5px dotted var(--a1)"></span> we guessed</span>
+              </div>
+            </div>
+
+            <div style="border:1px solid var(--line);border-radius:14px;background:var(--panel);box-shadow:var(--shadow)">
+              <div style="padding:15px 18px;border-bottom:1px solid var(--line)">
+                <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:12px">
+                  <div style="font-size:15px;font-weight:600">What we know</div>
+                  <div style="font-family:'JetBrains Mono',monospace;font-size:11.5px;color:var(--ink3)">31 things, oldest 14 months ago</div>
+                </div>
+                <div style="display:flex;gap:7px;flex-wrap:wrap">
+                  <sc-for list="{{ filters }}" as="f" hint-placeholder-count="5">
+                    <sc-if value="{{ f.on }}" hint-placeholder-val="{{ true }}">
+                      <button onClick="{{ f.go }}" style="border:1px solid var(--ink);background:var(--ink);color:var(--bg);font-size:12.5px;font-weight:600;padding:5px 11px;border-radius:7px;cursor:pointer">{{ f.label }}</button>
+                    </sc-if>
+                    <sc-if value="{{ f.off }}">
+                      <button onClick="{{ f.go }}" style="border:1px solid var(--line);background:transparent;color:var(--ink2);font-size:12.5px;font-weight:500;padding:5px 11px;border-radius:7px;cursor:pointer" style-hover="border-color:var(--line2);color:var(--ink)">{{ f.label }}</button>
+                    </sc-if>
+                  </sc-for>
+                </div>
+              </div>
+              <sc-for list="{{ personConclusions }}" as="c" hint-placeholder-count="4">
+                <div style="padding:15px 18px;border-bottom:1px solid var(--line);display:flex;gap:14px;align-items:flex-start">
+                  <div style="display:flex;gap:2px;align-items:center;padding-top:3px;flex-shrink:0">
+                    <sc-for list="{{ c.cells }}" as="cell" hint-placeholder-count="3">
+                      <sc-if value="{{ cell.on }}" hint-placeholder-val="{{ true }}"><span style="width:6px;height:15px;border-radius:1px;background:{{ c.color }}"></span></sc-if>
+                      <sc-if value="{{ cell.off }}"><span style="width:6px;height:15px;border-radius:1px;border:1px solid var(--line2)"></span></sc-if>
+                    </sc-for>
+                    <sc-if value="{{ c.isC }}"><span style="width:15px;height:15px;border:1.5px solid var(--warn);transform:rotate(45deg);margin-left:2px;background:linear-gradient(90deg,transparent 47%,var(--warn) 47%,var(--warn) 53%,transparent 53%)"></span></sc-if>
+                  </div>
+                  <div style="min-width:0;flex:1">
+                    <div style="font-size:15.5px;line-height:1.45;padding-bottom:2px;border-bottom:1.5px {{ c.ul }} {{ c.color }};display:inline;text-wrap:pretty">{{ c.text }}</div>
+                    <div style="display:flex;align-items:center;gap:10px;margin-top:9px;flex-wrap:wrap">
+                      <span style="display:flex;gap:3px;align-items:center">
+                        <sc-for list="{{ c.dots }}" as="d" hint-placeholder-count="2">
+                          <span style="width:5px;height:5px;border-radius:50%;background:var(--line2)"></span>
+                        </sc-for>
+                      </span>
+                      <span style="font-size:12px;color:var(--ink3)">{{ c.meta }}</span>
+                      <span style="font-size:11.5px;font-weight:600;color:{{ c.color }};background:{{ c.soft }};border-radius:20px;padding:2px 9px">{{ c.word }}</span>
+                      <span style="font-size:11.5px;color:var(--ink3)">{{ c.sure }}</span>
+                    </div>
+                  </div>
+                </div>
+              </sc-for>
+              <div style="padding:12px 18px;text-align:center">
+                <button style="border:1px solid var(--line);background:transparent;color:var(--ink2);font-size:12.5px;font-weight:500;padding:7px 14px;border-radius:8px;cursor:pointer">Show 27 older things</button>
+              </div>
+            </div>
+          </div>
+
+          <div style="display:flex;flex-direction:column;gap:16px;min-width:0">
+            <div style="border:1px solid var(--line);border-radius:14px;background:var(--panel);box-shadow:var(--shadow);padding:16px 17px">
+              <div style="font-size:15px;font-weight:600;margin-bottom:3px">Quick question</div>
+              <div style="font-size:12.5px;color:var(--ink3);margin-bottom:12px">Answered from everything known about her.</div>
+              <div style="display:flex;gap:8px;margin-bottom:12px">
+                <input value="{{ ask }}" onChange="{{ setAsk }}" onKeyDown="{{ askKey }}" placeholder="What does she need?" style="flex:1;min-width:0;border:1px solid var(--line);background:var(--panel2);border-radius:8px;padding:8px 11px;font-size:13.5px;outline:none" />
+                <button onClick="{{ runAsk }}" style="border:none;background:var(--ink);color:var(--bg);font-size:13px;font-weight:600;padding:8px 13px;border-radius:8px;cursor:pointer">Ask</button>
+              </div>
+              <div style="background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:13px 14px;font-size:14px;line-height:1.6;min-height:74px">{{ askOut }}<sc-if value="{{ asking }}"><span style="display:inline-block;width:7px;height:15px;background:var(--a1);vertical-align:-2px;animation:hx-blink 1s steps(1) infinite"></span></sc-if></div>
+            </div>
+
+            <div style="border:1px solid var(--line);border-radius:14px;background:var(--panel);box-shadow:var(--shadow);padding:16px 17px">
+              <div style="font-size:15px;font-weight:600;margin-bottom:12px">What we've learned, over time</div>
+              <svg viewBox="0 0 260 90" preserveAspectRatio="none" style="width:100%;height:90px">
+                <polyline points="{{ growth }}" fill="none" stroke="var(--a2)" stroke-width="2" vector-effect="non-scaling-stroke" stroke-linejoin="round"></polyline>
+              </svg>
+              <div style="display:flex;justify-content:space-between;font-family:'JetBrains Mono',monospace;font-size:10.5px;color:var(--ink3);margin-top:6px">
+                <span>14 months ago</span><span>today · 31</span>
+              </div>
+            </div>
+
+            <div style="border:1px solid var(--line);border-radius:14px;background:var(--panel);box-shadow:var(--shadow)">
+              <div style="padding:14px 17px;border-bottom:1px solid var(--line);font-size:15px;font-weight:600">Where she turns up</div>
+              <sc-for list="{{ personConvs }}" as="c" hint-placeholder-count="3">
+                <button onClick="{{ c.open }}" style="width:100%;display:flex;align-items:center;gap:11px;padding:11px 17px;background:transparent;border:none;border-bottom:1px solid var(--line);cursor:pointer;text-align:left" style-hover="background:var(--panel2)">
+                  <span style="flex:1;min-width:0">
+                    <span style="display:block;font-size:13.5px;font-weight:500">{{ c.title }}</span>
+                    <span style="display:block;font-size:12px;color:var(--ink3);margin-top:2px;font-family:'JetBrains Mono',monospace">{{ c.ref }}</span>
+                  </span>
+                  <span style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--ink3)">{{ c.ago }}</span>
+                </button>
+              </sc-for>
+            </div>
+          </div>
+        </div>
+
+        <sc-if value="{{ ctxOpen }}">
+          <div onClick="{{ toggleCtx }}" style="position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:60;display:flex;justify-content:flex-end">
+            <div onClick="{{ stop }}" style="width:min(540px,100%);height:100%;background:var(--panel);border-left:1px solid var(--line);overflow:auto;animation:hx-fade .2s ease both">
+              <div style="position:sticky;top:0;background:var(--panel);border-bottom:1px solid var(--line);padding:16px 20px;display:flex;align-items:center;justify-content:space-between">
+                <div>
+                  <div style="font-size:16px;font-weight:600">What an agent sees</div>
+                  <div style="font-size:12.5px;color:var(--ink3);margin-top:2px">The exact brief handed to an AI agent before it replies to her.</div>
+                </div>
+                <button onClick="{{ toggleCtx }}" style="border:1px solid var(--line);background:transparent;width:28px;height:28px;border-radius:7px;cursor:pointer;color:var(--ink2)">✕</button>
+              </div>
+              <div style="padding:20px">
+                <div style="border:1px solid var(--line);border-radius:10px;background:var(--panel2);padding:16px 18px;font-size:14.5px;line-height:1.7;text-wrap:pretty">
+                  You are talking to Adaeze Okonkwo, a customer of 14 months. She banks with GTBank. On 14 September she was debited ₦52,500 for the Dangote IPO and the allocation has not appeared; she has no CSCS number yet. She has raised this twice. She prefers WhatsApp. She tends to get impatient when a transfer stalls, so lead with the status, not the apology.
+                </div>
+                <div style="margin-top:16px;display:flex;gap:10px;flex-wrap:wrap">
+                  <span style="font-size:12px;color:var(--ink3)">Assembled from 31 things known, 9 conversations · 640 tokens</span>
+                </div>
+                <div style="margin-top:18px;border-top:1px solid var(--line);padding-top:16px">
+                  <div style="font-size:13.5px;font-weight:600;margin-bottom:8px">Left out on purpose</div>
+                  <div style="font-size:13.5px;color:var(--ink2);line-height:1.6">Nine guesses were held back because nothing she said supports them directly. You can loosen this in Settings.</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </sc-if>
+      </div>
+    </sc-if>
+
+    <!-- ══ CONVERSATIONS ══ -->
+    <sc-if value="{{ isConvs }}">
+      <div style="animation:hx-fade .25s ease both">
+        <div style="display:flex;align-items:flex-end;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:18px">
+          <div>
+            <h1 style="margin:0 0 6px;font-size:26px;font-weight:600;letter-spacing:-0.02em">{{ vConvs }}</h1>
+            <p style="margin:0;color:var(--ink2);font-size:14.5px">Every thread Amòye has read, and what it took from each.</p>
+          </div>
+          <button style="border:none;background:var(--ink);color:var(--bg);font-size:13px;font-weight:600;padding:9px 14px;border-radius:8px;cursor:pointer;display:inline-flex;align-items:center;gap:7px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" style="width:14px;height:14px"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>New {{ vConvLower }}</button>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;background:var(--panel);border:1px solid var(--line);border-radius:9px;padding:8px 12px;margin-bottom:14px">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="width:14px;height:14px;color:var(--ink3);flex-shrink:0"><circle cx="11" cy="11" r="6.5"></circle><line x1="16" y1="16" x2="20.5" y2="20.5"></line></svg>
+          <input value="{{ q }}" onChange="{{ setQ }}" placeholder="Find a thread" style="border:none;background:transparent;outline:none;font-size:13.5px;width:100%;min-width:0" />
+          <span style="font-family:'JetBrains Mono',monospace;font-size:11.5px;color:var(--ink3);white-space:nowrap">3,907 total</span>
+        </div>
+        <div style="border:1px solid var(--line);border-radius:14px;background:var(--panel);box-shadow:var(--shadow);overflow:hidden">
+          <sc-for list="{{ convs }}" as="c" hint-placeholder-count="6">
+            <button onClick="{{ c.open }}" style="width:100%;display:flex;align-items:center;gap:14px;padding:14px 18px;background:transparent;border:none;border-bottom:1px solid var(--line);cursor:pointer;text-align:left" style-hover="background:var(--panel2)">
+              <span style="width:32px;height:32px;border-radius:9px;background:{{ c.soft }};border:1px solid {{ c.color }};color:{{ c.color }};display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:600;flex-shrink:0">{{ c.initials }}</span>
+              <span style="flex:1;min-width:0">
+                <span style="display:block;font-size:14.5px;font-weight:600">{{ c.title }}</span>
+                <span style="display:block;font-size:12.5px;color:var(--ink3);margin-top:2px">{{ c.who }} · <span style="font-family:'JetBrains Mono',monospace">{{ c.ref }}</span></span>
+              </span>
+              <span style="display:flex;align-items:center;gap:8px;flex-shrink:0">
+                <sc-if value="{{ c.pending }}"><span style="font-size:11px;font-family:'JetBrains Mono',monospace;color:var(--a1);border:1px solid var(--a1);border-radius:5px;padding:1px 6px">reading</span></sc-if>
+                <span style="font-size:12.5px;color:var(--ink2);white-space:nowrap">{{ c.took }}</span>
+                <span style="font-family:'JetBrains Mono',monospace;font-size:11.5px;color:var(--ink3);width:34px;text-align:right">{{ c.ago }}</span>
+              </span>
+            </button>
+          </sc-for>
+        </div>
+      </div>
+    </sc-if>
+
+    <!-- ══ CONVERSATION ══ -->
+    <sc-if value="{{ isConv }}">
+      <div style="animation:hx-fade .25s ease both">
+        <button onClick="{{ goConvs }}" style="border:none;background:transparent;color:var(--ink3);font-size:13px;cursor:pointer;padding:0;margin-bottom:14px">← {{ vConvs }}</button>
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:20px">
+          <div>
+            <h1 style="margin:0 0 5px;font-size:24px;font-weight:600;letter-spacing:-0.02em">Dangote IPO allocation missing</h1>
+            <div style="font-size:13px;color:var(--ink3);font-family:'JetBrains Mono',monospace">ticket-8830 · started 2 hours ago</div>
+          </div>
+          <div style="display:flex;gap:8px">
+            <button style="border:1px solid var(--line);background:var(--panel);font-size:13px;padding:8px 13px;border-radius:8px;cursor:pointer" style-hover="border-color:var(--line2)">Duplicate</button>
+            <button onClick="{{ askDelete }}" style="border:1px solid var(--line);background:var(--panel);color:var(--warn);font-size:13px;padding:8px 13px;border-radius:8px;cursor:pointer" style-hover="border-color:var(--warn)">Delete</button>
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:{{ personCols }};gap:16px;align-items:start">
+          <div style="border:1px solid var(--line);border-radius:14px;background:var(--panel);box-shadow:var(--shadow);min-width:0">
+            <div style="padding:14px 18px;border-bottom:1px solid var(--line);font-size:15px;font-weight:600">Transcript</div>
+            <div style="padding:8px 18px 4px">
+              <sc-for list="{{ messages }}" as="m" hint-placeholder-count="4">
+                <div style="display:flex;gap:12px;padding:12px 0;align-items:flex-start">
+                  <sc-if value="{{ m.isAgent }}">
+                    <span style="width:30px;height:30px;border-radius:50%;border:1.5px dashed var(--line2);color:var(--ink3);display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:600;flex-shrink:0">{{ m.initials }}</span>
+                  </sc-if>
+                  <sc-if value="{{ m.isHuman }}" hint-placeholder-val="{{ true }}">
+                    <span style="width:30px;height:30px;border-radius:9px;background:{{ m.soft }};border:1px solid {{ m.color }};color:{{ m.color }};display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:600;flex-shrink:0">{{ m.initials }}</span>
+                  </sc-if>
+                  <div style="min-width:0;flex:1">
+                    <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
+                      <span style="font-size:13px;font-weight:600">{{ m.who }}</span>
+                      <sc-if value="{{ m.isAgent }}"><span style="font-family:'JetBrains Mono',monospace;font-size:9.5px;text-transform:uppercase;letter-spacing:.06em;border:1px dashed var(--line2);color:var(--ink3);border-radius:5px;padding:1px 5px">AI agent</span></sc-if>
+                      <span style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--ink3)">{{ m.time }}</span>
+                    </div>
+                    <div style="font-size:14.5px;line-height:1.6;color:var(--ink);text-wrap:pretty">{{ m.text }}</div>
+                  </div>
+                </div>
+              </sc-for>
+            </div>
+            <div style="padding:12px 18px;border-top:1px solid var(--line);display:flex;gap:8px;align-items:center">
+              <input placeholder="Add a message" style="flex:1;min-width:0;border:1px solid var(--line);background:var(--panel2);border-radius:8px;padding:9px 12px;font-size:13.5px;outline:none" />
+              <button style="border:none;background:var(--ink);color:var(--bg);font-size:13px;font-weight:600;padding:9px 14px;border-radius:8px;cursor:pointer">Add</button>
+            </div>
+            <div style="padding:0 18px 14px;font-size:12px;color:var(--ink3)">Adding a message doesn't change what we know straight away — Amòye reads it in the background, usually within a minute.</div>
+          </div>
+
+          <div style="display:flex;flex-direction:column;gap:16px;min-width:0">
+            <div style="border:1px solid var(--line);border-radius:14px;background:var(--panel);box-shadow:var(--shadow);padding:16px 17px">
+              <div style="font-size:15px;font-weight:600;margin-bottom:10px">What this thread was about</div>
+              <p style="margin:0;font-size:14px;line-height:1.6;color:var(--ink2);text-wrap:pretty">She paid for the Dangote IPO on 14 September, the allocation never appeared, and she has no CSCS number. The agent promised to confirm both and come back.</p>
+            </div>
+            <div style="border:1px solid var(--line);border-radius:14px;background:var(--panel);box-shadow:var(--shadow)">
+              <div style="padding:14px 17px;border-bottom:1px solid var(--line);font-size:15px;font-weight:600">Who's in it</div>
+              <sc-for list="{{ participants }}" as="p" hint-placeholder-count="2">
+                <div style="display:flex;align-items:center;gap:11px;padding:11px 17px;border-bottom:1px solid var(--line)">
+                  <sc-if value="{{ p.isAgent }}"><span style="width:28px;height:28px;border-radius:50%;border:1.5px dashed var(--line2);color:var(--ink3);display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;font-size:10.5px;font-weight:600">{{ p.initials }}</span></sc-if>
+                  <sc-if value="{{ p.isHuman }}" hint-placeholder-val="{{ true }}"><span style="width:28px;height:28px;border-radius:8px;background:{{ p.soft }};border:1px solid {{ p.color }};color:{{ p.color }};display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;font-size:10.5px;font-weight:600">{{ p.initials }}</span></sc-if>
+                  <span style="flex:1;font-size:13.5px;font-weight:500">{{ p.name }}</span>
+                  <span style="font-size:11.5px;color:var(--ink3)">{{ p.role }}</span>
+                </div>
+              </sc-for>
+            </div>
+            <div style="border:1px solid var(--line);border-radius:14px;background:var(--panel);box-shadow:var(--shadow)">
+              <div style="padding:14px 17px;border-bottom:1px solid var(--line);font-size:15px;font-weight:600">What it took from this</div>
+              <sc-for list="{{ convConclusions }}" as="c" hint-placeholder-count="2">
+                <div style="padding:13px 17px;border-bottom:1px solid var(--line)">
+                  <div style="display:flex;gap:10px;align-items:flex-start">
+                    <div style="display:flex;gap:2px;align-items:center;padding-top:2px;flex-shrink:0">
+                      <sc-for list="{{ c.cells }}" as="cell" hint-placeholder-count="3">
+                        <sc-if value="{{ cell.on }}" hint-placeholder-val="{{ true }}"><span style="width:5px;height:13px;border-radius:1px;background:{{ c.color }}"></span></sc-if>
+                        <sc-if value="{{ cell.off }}"><span style="width:5px;height:13px;border-radius:1px;border:1px solid var(--line2)"></span></sc-if>
+                      </sc-for>
+                    </div>
+                    <div style="min-width:0">
+                      <div style="font-size:14px;line-height:1.45;border-bottom:1.5px {{ c.ul }} {{ c.color }};display:inline">{{ c.text }}</div>
+                      <div style="margin-top:7px;display:flex;gap:9px;align-items:center;flex-wrap:wrap">
+                        <span style="font-size:11.5px;font-weight:600;color:{{ c.color }};background:{{ c.soft }};border-radius:20px;padding:2px 9px">{{ c.word }}</span>
+                        <span style="font-size:11.5px;color:var(--ink3)">{{ c.sure }}</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+        </div>
+        <sc-if value="{{ confirmDelete }}">
+          <div onClick="{{ askDelete }}" style="position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:70;display:flex;align-items:center;justify-content:center;padding:20px">
+            <div onClick="{{ stop }}" style="width:min(430px,100%);background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:22px;box-shadow:var(--shadow)">
+              <div style="font-size:17px;font-weight:600;margin-bottom:8px">Delete this thread?</div>
+              <p style="margin:0 0 18px;font-size:14px;line-height:1.55;color:var(--ink2)">Four things Amòye knows came from this thread. They'll be removed too, and anything that followed from them will be re-checked.</p>
+              <div style="display:flex;gap:8px;justify-content:flex-end">
+                <button onClick="{{ askDelete }}" style="border:1px solid var(--line);background:transparent;font-size:13px;padding:8px 13px;border-radius:8px;cursor:pointer">Keep it</button>
+                <button onClick="{{ askDelete }}" style="border:none;background:var(--warn);color:#fff;font-size:13px;font-weight:600;padding:8px 13px;border-radius:8px;cursor:pointer">Delete anyway</button>
+              </div>
+            </div>
+          </div>
+        </sc-if>
+      </div>
+    </sc-if>
+
+    <!-- ══ WHAT WE KNOW ══ -->
+    <sc-if value="{{ isKnow }}">
+      <div style="animation:hx-fade .25s ease both">
+        <div style="margin-bottom:18px">
+          <h1 style="margin:0 0 6px;font-size:26px;font-weight:600;letter-spacing:-0.02em">What we know</h1>
+          <p style="margin:0;color:var(--ink2);font-size:14.5px">Every conclusion Amòye has drawn, and how it got there.</p>
+        </div>
+        <div style="border:1px solid var(--warn);background:var(--warnsoft);border-radius:12px;padding:13px 16px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:16px">
+          <span style="width:14px;height:14px;border:1.5px solid var(--warn);transform:rotate(45deg);background:linear-gradient(90deg,transparent 47%,var(--warn) 47%,var(--warn) 53%,transparent 53%);flex-shrink:0"></span>
+          <span style="font-size:13.5px;color:var(--ink);flex:1;min-width:200px">Three things we believe disagree with each other. Worth a look before repeating any of it.</span>
+          <button onClick="{{ goContra }}" style="border:1px solid var(--warn);background:transparent;color:var(--warn);font-size:12.5px;font-weight:600;padding:5px 11px;border-radius:7px;cursor:pointer">Show only those</button>
+        </div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px">
+          <div style="display:flex;align-items:center;gap:8px;background:var(--panel);border:1px solid var(--line);border-radius:9px;padding:8px 12px;flex:1;min-width:220px">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="width:14px;height:14px;color:var(--ink3);flex-shrink:0"><circle cx="11" cy="11" r="6.5"></circle><line x1="16" y1="16" x2="20.5" y2="20.5"></line></svg>
+            <input value="{{ q }}" onChange="{{ setQ }}" placeholder="Search by meaning — “money worries”, “wants to leave”" style="border:none;background:transparent;outline:none;font-size:13.5px;width:100%;min-width:0" />
+          </div>
+        </div>
+        <div style="display:flex;gap:7px;flex-wrap:wrap;margin-bottom:8px">
+          <sc-for list="{{ filters }}" as="f" hint-placeholder-count="5">
+            <sc-if value="{{ f.on }}" hint-placeholder-val="{{ true }}">
+              <button onClick="{{ f.go }}" style="border:1px solid var(--ink);background:var(--ink);color:var(--bg);font-size:12.5px;font-weight:600;padding:6px 12px;border-radius:8px;cursor:pointer">{{ f.label }}</button>
+            </sc-if>
+            <sc-if value="{{ f.off }}">
+              <button onClick="{{ f.go }}" style="border:1px solid var(--line);background:var(--panel);color:var(--ink2);font-size:12.5px;font-weight:500;padding:6px 12px;border-radius:8px;cursor:pointer" style-hover="border-color:var(--line2);color:var(--ink)">{{ f.label }}</button>
+            </sc-if>
+          </sc-for>
+        </div>
+        <div style="display:flex;gap:7px;flex-wrap:wrap;margin-bottom:16px">
+          <sc-for list="{{ topicChips }}" as="t" hint-placeholder-count="5">
+            <button style="border:1px dashed var(--line2);background:transparent;color:var(--ink3);font-size:12px;padding:5px 10px;border-radius:20px;cursor:pointer;white-space:nowrap" style-hover="color:var(--ink);border-color:var(--ink3)">{{ t.name }} · {{ t.n }}</button>
+          </sc-for>
+        </div>
+        <div style="border:1px solid var(--line);border-radius:14px;background:var(--panel);box-shadow:var(--shadow);overflow:hidden">
+          <sc-for list="{{ knowList }}" as="c" hint-placeholder-count="6">
+            <div style="padding:16px 18px;border-bottom:1px solid var(--line);display:flex;gap:14px;align-items:flex-start">
+              <div style="display:flex;gap:2px;align-items:center;padding-top:3px;flex-shrink:0">
+                <sc-for list="{{ c.cells }}" as="cell" hint-placeholder-count="3">
+                  <sc-if value="{{ cell.on }}" hint-placeholder-val="{{ true }}"><span style="width:6px;height:15px;border-radius:1px;background:{{ c.color }}"></span></sc-if>
+                  <sc-if value="{{ cell.off }}"><span style="width:6px;height:15px;border-radius:1px;border:1px solid var(--line2)"></span></sc-if>
+                </sc-for>
+                <sc-if value="{{ c.isC }}"><span style="width:15px;height:15px;border:1.5px solid var(--warn);transform:rotate(45deg);margin-left:2px;background:linear-gradient(90deg,transparent 47%,var(--warn) 47%,var(--warn) 53%,transparent 53%)"></span></sc-if>
+              </div>
+              <div style="min-width:0;flex:1">
+                <div style="font-size:15.5px;line-height:1.45;padding-bottom:2px;border-bottom:1.5px {{ c.ul }} {{ c.color }};display:inline;text-wrap:pretty">{{ c.text }}</div>
+                <sc-if value="{{ c.isC }}">
+                  <div style="margin-top:12px;display:grid;grid-template-columns:{{ contraCols }};gap:10px">
+                    <div style="border:1px solid var(--line);border-radius:9px;padding:10px 12px;background:var(--panel2)">
+                      <div style="font-family:'JetBrains Mono',monospace;font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--ink3);margin-bottom:5px">On 11 September</div>
+                      <div style="font-size:13.5px;line-height:1.45">“The reversal came through, thank you.”</div>
+                    </div>
+                    <div style="border:1px solid var(--line);border-radius:9px;padding:10px 12px;background:var(--panel2)">
+                      <div style="font-family:'JetBrains Mono',monospace;font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--ink3);margin-bottom:5px">On 18 September</div>
+                      <div style="font-size:13.5px;line-height:1.45">“I still have not received that reversal.”</div>
+                    </div>
+                  </div>
+                  <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap">
+                    <button style="border:1px solid var(--line);background:transparent;font-size:12.5px;padding:5px 11px;border-radius:7px;cursor:pointer">Keep the later one</button>
+                    <button style="border:1px solid var(--line);background:transparent;font-size:12.5px;padding:5px 11px;border-radius:7px;cursor:pointer">Keep both, flagged</button>
+                  </div>
+                </sc-if>
+                <div style="display:flex;align-items:center;gap:10px;margin-top:10px;flex-wrap:wrap">
+                  <span style="font-size:12.5px;color:var(--ink2);font-weight:500">{{ c.person }}</span>
+                  <span style="font-size:12px;color:var(--ink3)">{{ c.meta }}</span>
+                  <span style="font-size:11.5px;font-weight:600;color:{{ c.color }};background:{{ c.soft }};border-radius:20px;padding:2px 9px">{{ c.word }}</span>
+                  <span style="font-size:11.5px;color:var(--ink3)">{{ c.sure }}</span>
+                </div>
+              </div>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+    </sc-if>
+
+    <!-- ══ ASK ══ -->
+    <sc-if value="{{ isAsk }}">
+      <div style="animation:hx-fade .25s ease both;max-width:820px;margin:0 auto">
+        <div style="text-align:center;margin-bottom:22px">
+          <h1 style="margin:0 0 8px;font-size:28px;font-weight:600;letter-spacing:-0.025em">Ask</h1>
+          <p style="margin:0;color:var(--ink2);font-size:15px">A question in plain English. Amòye answers from everything it has read.</p>
+        </div>
+        <div style="border:1px solid var(--line);border-radius:14px;background:var(--panel);box-shadow:var(--shadow);padding:16px">
+          <textarea value="{{ ask }}" onChange="{{ setAsk }}" onKeyDown="{{ askKey }}" rows="2" placeholder="Which people are unhappy about charges?" style="width:100%;border:none;background:transparent;outline:none;resize:none;font-size:17px;line-height:1.5"></textarea>
+          <div style="display:flex;align-items:center;gap:10px;justify-content:space-between;flex-wrap:wrap;margin-top:8px;padding-top:12px;border-top:1px solid var(--line)">
+            <div style="display:flex;gap:7px;flex-wrap:wrap">
+              <button style="border:1px solid var(--line);background:transparent;color:var(--ink2);font-size:12.5px;padding:5px 11px;border-radius:7px;cursor:pointer">About anyone ▾</button>
+              <button style="border:1px solid var(--line);background:transparent;color:var(--ink2);font-size:12.5px;padding:5px 11px;border-radius:7px;cursor:pointer">All {{ vConvsLower }} ▾</button>
+            </div>
+            <button onClick="{{ runAsk }}" style="border:none;background:var(--ink);color:var(--bg);font-size:13.5px;font-weight:600;padding:9px 16px;border-radius:8px;cursor:pointer">Ask</button>
+          </div>
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:14px;justify-content:center">
+          <sc-for list="{{ suggestions }}" as="s" hint-placeholder-count="3">
+            <button onClick="{{ s.go }}" style="border:1px dashed var(--line2);background:transparent;color:var(--ink2);font-size:12.5px;padding:6px 12px;border-radius:20px;cursor:pointer" style-hover="color:var(--ink);border-color:var(--ink3)">{{ s.text }}</button>
+          </sc-for>
+        </div>
+        <sc-if value="{{ hasAnswer }}">
+          <div style="border:1px solid var(--line);border-radius:14px;background:var(--panel);box-shadow:var(--shadow);margin-top:18px;padding:20px 22px">
+            <div style="font-size:16.5px;line-height:1.7;text-wrap:pretty">{{ askOut }}<sc-if value="{{ asking }}"><span style="display:inline-block;width:8px;height:17px;background:var(--a1);vertical-align:-3px;animation:hx-blink 1s steps(1) infinite"></span></sc-if></div>
+            <sc-if value="{{ answerDone }}">
+              <div style="margin-top:18px;padding-top:15px;border-top:1px solid var(--line)">
+                <div style="font-family:'JetBrains Mono',monospace;font-size:10.5px;letter-spacing:.09em;text-transform:uppercase;color:var(--ink3);margin-bottom:10px">What this rests on</div>
+                <div style="display:flex;gap:8px;flex-wrap:wrap">
+                  <sc-for list="{{ sources }}" as="s" hint-placeholder-count="3">
+                    <span style="display:flex;align-items:center;gap:7px;border:1px solid var(--line);border-radius:8px;padding:5px 10px;font-size:12.5px;color:var(--ink2)">
+                      <span style="width:6px;height:6px;border-radius:50%;background:{{ s.color }}"></span>{{ s.text }}
+                    </span>
+                  </sc-for>
+                </div>
+              </div>
+            </sc-if>
+          </div>
+        </sc-if>
+      </div>
+    </sc-if>
+
+    <!-- ══ GROUPS ══ -->
+    <sc-if value="{{ isGroups }}">
+      <div style="animation:hx-fade .25s ease both">
+        <div style="display:flex;align-items:flex-end;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:18px">
+          <div>
+            <h1 style="margin:0 0 6px;font-size:26px;font-weight:600;letter-spacing:-0.02em">Groups</h1>
+            <p style="margin:0;color:var(--ink2);font-size:14.5px;max-width:62ch;text-wrap:pretty">A named set of {{ vConvsLower }}. Ask a question inside a group and the answer only draws on what's in it.</p>
+          </div>
+          <button style="border:none;background:var(--ink);color:var(--bg);font-size:13px;font-weight:600;padding:9px 14px;border-radius:8px;cursor:pointer;display:inline-flex;align-items:center;gap:7px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" style="width:14px;height:14px"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>New group</button>
+        </div>
+        <div style="border:1px solid var(--a1);background:var(--a1soft);border-radius:12px;padding:14px 16px;margin-bottom:16px;display:flex;gap:12px;align-items:flex-start">
+          <span style="width:14px;height:14px;border-radius:50%;border:2px solid var(--a1);border-top-color:transparent;margin-top:2px;flex-shrink:0"></span>
+          <div style="font-size:13.5px;line-height:1.55;color:var(--ink)">
+            <strong style="font-weight:600">A group that is still indexing answers with less than it should.</strong> An empty group returns nothing at all — not everything. Wait for it to finish before trusting an answer from it.
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:14px">
+          <sc-for list="{{ groups }}" as="g" hint-placeholder-count="4">
+            <div style="border:1px solid var(--line);border-radius:14px;background:var(--panel);box-shadow:var(--shadow);padding:16px 17px">
+              <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:8px">
+                <span style="font-size:15.5px;font-weight:600">{{ g.name }}</span>
+                <sc-if value="{{ g.indexing }}"><span style="font-family:'JetBrains Mono',monospace;font-size:10.5px;color:var(--a1);border:1px solid var(--a1);border-radius:5px;padding:1px 6px">indexing</span></sc-if>
+                <sc-if value="{{ g.ready }}" hint-placeholder-val="{{ true }}"><span style="font-family:'JetBrains Mono',monospace;font-size:10.5px;color:var(--a3);border:1px solid var(--a3);border-radius:5px;padding:1px 6px">ready</span></sc-if>
+              </div>
+              <div style="font-size:13px;color:var(--ink2);line-height:1.5;margin-bottom:13px">{{ g.desc }}</div>
+              <div style="height:6px;border-radius:4px;background:var(--panel2);overflow:hidden;margin-bottom:8px">
+                <div style="height:100%;width:{{ g.pct }};background:{{ g.color }};border-radius:4px"></div>
+              </div>
+              <div style="display:flex;justify-content:space-between;font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--ink3)">
+                <span>{{ g.count }}</span><span>{{ g.state }}</span>
+              </div>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+    </sc-if>
+
+    <!-- ══ BACKLOG ══ -->
+    <sc-if value="{{ isBacklog }}">
+      <div style="animation:hx-fade .25s ease both">
+        <div style="margin-bottom:18px">
+          <h1 style="margin:0 0 6px;font-size:26px;font-weight:600;letter-spacing:-0.02em">Backlog</h1>
+          <p style="margin:0;color:var(--ink2);font-size:14.5px">How far behind Amòye is on reading what's come in.</p>
+        </div>
+        <div style="display:grid;grid-template-columns:{{ personCols }};gap:16px;align-items:start">
+          <div style="border:1px solid var(--line);border-radius:14px;background:var(--panel);box-shadow:var(--shadow);min-width:0">
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:15px 18px;border-bottom:1px solid var(--line);flex-wrap:wrap">
+              <div>
+                <div style="font-size:15px;font-weight:600">Waiting to be read</div>
+                <div style="font-size:12.5px;color:var(--ink3);margin-top:2px">Last 24 hours · peak 31, now 7</div>
+              </div>
+              <div style="display:flex;align-items:baseline;gap:6px">
+                <span style="font-size:26px;font-weight:600;font-variant-numeric:tabular-nums;letter-spacing:-0.02em">7</span>
+                <span style="font-size:12.5px;color:var(--ink3)">about 40 seconds behind</span>
+              </div>
+            </div>
+            <div style="padding:16px 18px">
+              <div style="display:flex;align-items:flex-end;gap:3px;height:130px">
+                <sc-for list="{{ backlog }}" as="b" hint-placeholder-count="24">
+                  <div style="flex:1;background:{{ b.color }};height:{{ b.h }};border-radius:2px 2px 0 0;min-height:2px;min-width:0" title="{{ b.title }}"></div>
+                </sc-for>
+              </div>
+              <div style="display:flex;justify-content:space-between;font-family:'JetBrains Mono',monospace;font-size:10.5px;color:var(--ink3);margin-top:8px">
+                <span>24h ago</span><span>12h</span><span>now</span>
+              </div>
+            </div>
+            <div style="border-top:1px solid var(--line)">
+              <div style="padding:13px 18px;font-size:14.5px;font-weight:600">What it's working through</div>
+              <sc-for list="{{ queue }}" as="w" hint-placeholder-count="4">
+                <div style="display:flex;align-items:center;gap:12px;padding:11px 18px;border-top:1px solid var(--line)">
+                  <span style="width:8px;height:8px;border-radius:50%;background:{{ w.color }};flex-shrink:0;animation:hx-pulse 1.8s ease-in-out infinite"></span>
+                  <span style="flex:1;min-width:0">
+                    <span style="display:block;font-size:13.5px;font-weight:500">{{ w.title }}</span>
+                    <span style="display:block;font-size:12px;color:var(--ink3);margin-top:2px">{{ w.what }}</span>
+                  </span>
+                  <span style="font-family:'JetBrains Mono',monospace;font-size:11.5px;color:var(--ink3)">{{ w.wait }}</span>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:16px;min-width:0">
+            <div style="border:1px solid var(--line);border-radius:14px;background:var(--panel);box-shadow:var(--shadow);padding:17px">
+              <div style="font-size:15px;font-weight:600;margin-bottom:6px">When this is empty</div>
+              <p style="margin:0;font-size:13.5px;line-height:1.6;color:var(--ink2);text-wrap:pretty">…everything else in Amòye is up to date: every message sent has been read, and every conclusion reflects it.</p>
+            </div>
+            <div style="border:1px solid var(--line);border-radius:14px;background:var(--panel);box-shadow:var(--shadow);padding:17px">
+              <div style="font-size:15px;font-weight:600;margin-bottom:6px">Tidy up one person</div>
+              <p style="margin:0 0 12px;font-size:13.5px;line-height:1.6;color:var(--ink2)">Re-reads everything known about someone, merges duplicates and rewrites their nutshell. Takes a minute or two.</p>
+              <div style="display:flex;gap:8px;flex-wrap:wrap">
+                <button style="flex:1;min-width:120px;border:1px solid var(--line);background:var(--panel2);font-size:13px;padding:8px 11px;border-radius:8px;cursor:pointer;text-align:left">Adaeze Okonkwo ▾</button>
+                <button style="border:none;background:var(--ink);color:var(--bg);font-size:13px;font-weight:600;padding:8px 13px;border-radius:8px;cursor:pointer">Tidy up</button>
+              </div>
+              <div style="margin-top:11px;font-size:12px;color:var(--ink3);font-family:'JetBrains Mono',monospace">last run 6 days ago</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </sc-if>
+
+    <!-- ══ SETTINGS ══ -->
+    <sc-if value="{{ isSettings }}">
+      <div style="animation:hx-fade .25s ease both;max-width:860px">
+        <div style="margin-bottom:20px">
+          <h1 style="margin:0 0 6px;font-size:26px;font-weight:600;letter-spacing:-0.02em">Settings</h1>
+          <p style="margin:0;color:var(--ink2);font-size:14.5px">Workspace, wording, and the keys that reach it.</p>
+        </div>
+        <div style="border:1px solid var(--line);border-radius:14px;background:var(--panel);box-shadow:var(--shadow);padding:20px;margin-bottom:16px">
+          <div style="font-size:16px;font-weight:600;margin-bottom:4px">Vocabulary</div>
+          <p style="margin:0 0 14px;font-size:13.5px;color:var(--ink2);line-height:1.55">Amòye holds people and threads. What you call them is up to you — this relabels the whole console.</p>
+          <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px">
+            <sc-for list="{{ vocabs }}" as="v" hint-placeholder-count="6">
+              <sc-if value="{{ v.on }}" hint-placeholder-val="{{ true }}">
+                <button onClick="{{ v.go }}" style="text-align:left;border:1.5px solid var(--a1);background:var(--a1soft);border-radius:10px;padding:12px 13px;cursor:pointer">
+                  <span style="display:block;font-size:13.5px;font-weight:600;margin-bottom:3px">{{ v.name }}</span>
+                  <span style="display:block;font-size:12.5px;color:var(--ink2)">{{ v.words }}</span>
+                </button>
+              </sc-if>
+              <sc-if value="{{ v.off }}">
+                <button onClick="{{ v.go }}" style="text-align:left;border:1px solid var(--line);background:transparent;border-radius:10px;padding:12px 13px;cursor:pointer" style-hover="border-color:var(--line2)">
+                  <span style="display:block;font-size:13.5px;font-weight:600;margin-bottom:3px">{{ v.name }}</span>
+                  <span style="display:block;font-size:12.5px;color:var(--ink3)">{{ v.words }}</span>
+                </button>
+              </sc-if>
+            </sc-for>
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px;margin-bottom:16px">
+          <div style="border:1px solid var(--line);border-radius:14px;background:var(--panel);box-shadow:var(--shadow);padding:20px">
+            <div style="font-size:16px;font-weight:600;margin-bottom:12px">Appearance</div>
+            <div style="display:flex;gap:8px">
+              <sc-for list="{{ themes }}" as="t" hint-placeholder-count="2">
+                <sc-if value="{{ t.on }}" hint-placeholder-val="{{ true }}">
+                  <button onClick="{{ t.go }}" style="flex:1;border:1.5px solid var(--a1);background:var(--a1soft);border-radius:9px;padding:9px;font-size:13px;font-weight:600;cursor:pointer">{{ t.label }}</button>
+                </sc-if>
+                <sc-if value="{{ t.off }}">
+                  <button onClick="{{ t.go }}" style="flex:1;border:1px solid var(--line);background:transparent;border-radius:9px;padding:9px;font-size:13px;font-weight:500;cursor:pointer;color:var(--ink2)" style-hover="border-color:var(--line2)">{{ t.label }}</button>
+                </sc-if>
+              </sc-for>
+            </div>
+          </div>
+          <div style="border:1px solid var(--line);border-radius:14px;background:var(--panel);box-shadow:var(--shadow);padding:20px">
+            <div style="font-size:16px;font-weight:600;margin-bottom:12px">Workspace</div>
+            <div style="display:flex;justify-content:space-between;font-size:13.5px;padding:7px 0;border-bottom:1px solid var(--line)"><span style="color:var(--ink2)">Name</span><span style="font-weight:500">{{ workspace }}</span></div>
+            <div style="display:flex;justify-content:space-between;font-size:13.5px;padding:7px 0;border-bottom:1px solid var(--line)"><span style="color:var(--ink2)">Region</span><span style="font-weight:500">eu-west-1</span></div>
+            <div style="display:flex;justify-content:space-between;font-size:13.5px;padding:7px 0"><span style="color:var(--ink2)">Retention</span><span style="font-weight:500">24 months</span></div>
+          </div>
+        </div>
+        <div style="border:1px solid var(--line);border-radius:14px;background:var(--panel);box-shadow:var(--shadow);padding:20px;margin-bottom:16px">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+            <div style="font-size:16px;font-weight:600">Keys and webhooks</div>
+            <button style="border:1px solid var(--line);background:transparent;font-size:12.5px;padding:6px 11px;border-radius:7px;cursor:pointer;display:inline-flex;align-items:center;gap:6px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" style="width:14px;height:14px"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>New key</button>
+          </div>
+          <sc-for list="{{ keys }}" as="k" hint-placeholder-count="3">
+            <div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-top:1px solid var(--line)">
+              <span style="font-family:'JetBrains Mono',monospace;font-size:12.5px;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ k.value }}</span>
+              <span style="font-size:12px;color:var(--ink3);white-space:nowrap">{{ k.meta }}</span>
+              <button style="border:1px solid var(--line);background:transparent;font-size:12px;padding:4px 9px;border-radius:6px;cursor:pointer;color:var(--ink2)">Revoke</button>
+            </div>
+          </sc-for>
+        </div>
+        <div style="border:1px solid var(--warn);border-radius:14px;background:var(--warnsoft);padding:20px">
+          <div style="font-size:16px;font-weight:600;color:var(--warn);margin-bottom:8px">Deleting things</div>
+          <p style="margin:0 0 14px;font-size:13.5px;line-height:1.6;color:var(--ink2);text-wrap:pretty">Deleting a person removes everything derived about them. It will be refused while a tidy-up is running for that person or while their {{ vConvsLower }} are still being read — otherwise Amòye would rebuild half of what you just deleted.</p>
+          <button style="border:1px solid var(--warn);background:transparent;color:var(--warn);font-size:13px;font-weight:600;padding:8px 13px;border-radius:8px;cursor:pointer">Delete this workspace</button>
+        </div>
+      </div>
+    </sc-if>
+
+    <!-- ══ DEVELOPER ══ -->
+    <sc-if value="{{ isDev }}">
+      <div style="animation:hx-fade .25s ease both">
+        <div style="display:flex;align-items:flex-end;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:18px">
+          <div>
+            <h1 style="margin:0 0 6px;font-size:26px;font-weight:600;letter-spacing:-0.02em">Developer</h1>
+            <p style="margin:0;color:var(--ink2);font-size:14.5px">All 55 endpoints, runnable. Amòye's own vocabulary lives here and nowhere else.</p>
+          </div>
+          <div style="display:flex;gap:10px">
+            <sc-for list="{{ health }}" as="h" hint-placeholder-count="3">
+              <div style="display:flex;align-items:center;gap:7px;border:1px solid var(--line);border-radius:8px;padding:6px 10px;background:var(--panel)">
+                <span style="width:7px;height:7px;border-radius:50%;background:{{ h.color }}"></span>
+                <span style="font-family:'JetBrains Mono',monospace;font-size:11.5px;color:var(--ink2)">{{ h.label }}</span>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:{{ devCols }};gap:16px;align-items:start">
+          <div style="border:1px solid var(--line);border-radius:14px;background:var(--panel);box-shadow:var(--shadow);overflow:hidden;min-width:0">
+            <div style="padding:11px 14px;border-bottom:1px solid var(--line)">
+              <input value="{{ q }}" onChange="{{ setQ }}" placeholder="Filter endpoints" style="width:100%;border:1px solid var(--line);background:var(--panel2);border-radius:7px;padding:7px 10px;font-size:12.5px;outline:none;font-family:'JetBrains Mono',monospace" />
+            </div>
+            <div style="max-height:560px;overflow:auto">
+              <sc-for list="{{ endpoints }}" as="e" hint-placeholder-count="10">
+                <button onClick="{{ e.go }}" style="width:100%;display:flex;align-items:center;gap:9px;padding:8px 14px;background:transparent;border:none;border-bottom:1px solid var(--line);cursor:pointer;text-align:left" style-hover="background:var(--panel2)">
+                  <span style="font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:600;color:{{ e.color }};width:42px;flex-shrink:0">{{ e.method }}</span>
+                  <span style="font-family:'JetBrains Mono',monospace;font-size:11.5px;color:var(--ink2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ e.path }}</span>
+                </button>
+              </sc-for>
+            </div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:16px;min-width:0">
+            <div style="border:1px solid var(--line);border-radius:14px;background:var(--panel);box-shadow:var(--shadow)">
+              <div style="display:flex;align-items:center;gap:10px;padding:13px 16px;border-bottom:1px solid var(--line);flex-wrap:wrap">
+                <span style="font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:600;color:var(--a3);border:1px solid var(--a3);border-radius:5px;padding:2px 7px">{{ sel.method }}</span>
+                <span style="font-family:'JetBrains Mono',monospace;font-size:12.5px;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ sel.path }}</span>
+                <button onClick="{{ runReq }}" style="border:none;background:var(--ink);color:var(--bg);font-size:12.5px;font-weight:600;padding:7px 13px;border-radius:7px;cursor:pointer">Send</button>
+              </div>
+              <div style="padding:14px 16px">
+                <div style="font-family:'JetBrains Mono',monospace;font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink3);margin-bottom:8px">Response</div>
+                <pre style="margin:0;background:var(--panel2);border:1px solid var(--line);border-radius:9px;padding:13px;font-family:'JetBrains Mono',monospace;font-size:12px;line-height:1.6;overflow:auto;max-height:290px;color:var(--ink2)">{{ devOut }}</pre>
+              </div>
+            </div>
+            <div style="border:1px solid var(--line);border-radius:14px;background:var(--panel);box-shadow:var(--shadow)">
+              <div style="padding:13px 16px;border-bottom:1px solid var(--line);font-size:14.5px;font-weight:600">Requests this session</div>
+              <sc-for list="{{ reqLog }}" as="r" hint-placeholder-count="4">
+                <div style="display:flex;align-items:center;gap:10px;padding:9px 16px;border-bottom:1px solid var(--line);font-family:'JetBrains Mono',monospace;font-size:11.5px">
+                  <span style="color:{{ r.color }};width:42px;flex-shrink:0;font-weight:600">{{ r.method }}</span>
+                  <span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--ink2)">{{ r.path }}</span>
+                  <span style="color:{{ r.statusColor }}">{{ r.status }}</span>
+                  <span style="color:var(--ink3);width:52px;text-align:right">{{ r.ms }}</span>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+        </div>
+      </div>
+    </sc-if>
+
+  </main>
+  </div>
+
+  <sc-if value="{{ drawerOpen }}">
+    <div onClick="{{ toggleMenu }}" style="position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:80;display:flex">
+      <div onClick="{{ stop }}" style="width:260px;max-width:82%;height:100%;background:var(--panel);border-right:1px solid var(--line);display:flex;flex-direction:column;animation:hx-fade .18s ease both">
+        <div style="display:flex;align-items:center;gap:10px;padding:16px 18px 14px">
+          <div style="width:26px;height:26px;border-radius:7px;background:var(--a1);display:flex;align-items:center;justify-content:center">
+            <div style="width:9px;height:9px;border-radius:2px;background:var(--panel)"></div>
+          </div>
+          <span style="font-weight:600;font-size:15.5px;flex:1">Amòye</span>
+          <button onClick="{{ toggleMenu }}" style="border:1px solid var(--line);background:transparent;width:26px;height:26px;border-radius:7px;cursor:pointer;color:var(--ink2)">✕</button>
+        </div>
+        <div style="padding:0 12px 12px">
+          <div style="display:flex;align-items:center;gap:9px;background:var(--panel2);border:1px solid var(--line);border-radius:9px;padding:8px 10px">
+            <span style="width:6px;height:6px;border-radius:50%;background:var(--a3)"></span>
+            <span style="font-size:13px;font-weight:500">{{ workspace }}</span>
+          </div>
+        </div>
+        <nav style="flex:1;overflow:auto;padding:0 12px 16px">
+          <sc-for list="{{ navGroups }}" as="g" hint-placeholder-count="4">
+            <div style="margin-bottom:16px">
+              <div style="font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink3);padding:0 8px 7px">{{ g.label }}</div>
+              <sc-for list="{{ g.items }}" as="i" hint-placeholder-count="3">
+                <sc-if value="{{ i.on }}" hint-placeholder-val="{{ true }}">
+                  <button onClick="{{ i.go }}" style="width:100%;display:flex;align-items:center;gap:10px;background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:8px 10px;margin-bottom:2px;cursor:pointer;text-align:left;color:var(--a1)">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:17px;height:17px;flex-shrink:0">
+                      <sc-for list="{{ i.icon }}" as="sh" hint-placeholder-count="2">
+                        <sc-if value="{{ sh.isPath }}" hint-placeholder-val="{{ true }}"><path d="{{ sh.d }}"></path></sc-if>
+                        <sc-if value="{{ sh.isCircle }}"><circle cx="{{ sh.cx }}" cy="{{ sh.cy }}" r="{{ sh.r }}"></circle></sc-if>
+                        <sc-if value="{{ sh.isRect }}"><rect x="{{ sh.x }}" y="{{ sh.y }}" width="{{ sh.w }}" height="{{ sh.h }}" rx="{{ sh.rx }}"></rect></sc-if>
+                        <sc-if value="{{ sh.isLine }}"><line x1="{{ sh.x1 }}" y1="{{ sh.y1 }}" x2="{{ sh.x2 }}" y2="{{ sh.y2 }}"></line></sc-if>
+                      </sc-for>
+                    </svg>
+                    <span style="flex:1;font-size:14px;font-weight:600;color:var(--ink)">{{ i.label }}</span>
+                  </button>
+                </sc-if>
+                <sc-if value="{{ i.off }}">
+                  <button onClick="{{ i.go }}" style="width:100%;display:flex;align-items:center;gap:10px;background:transparent;border:1px solid transparent;border-radius:8px;padding:8px 10px;margin-bottom:2px;cursor:pointer;text-align:left;color:var(--ink3)" style-hover="background:var(--panel2)">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:17px;height:17px;flex-shrink:0">
+                      <sc-for list="{{ i.icon }}" as="sh" hint-placeholder-count="2">
+                        <sc-if value="{{ sh.isPath }}" hint-placeholder-val="{{ true }}"><path d="{{ sh.d }}"></path></sc-if>
+                        <sc-if value="{{ sh.isCircle }}"><circle cx="{{ sh.cx }}" cy="{{ sh.cy }}" r="{{ sh.r }}"></circle></sc-if>
+                        <sc-if value="{{ sh.isRect }}"><rect x="{{ sh.x }}" y="{{ sh.y }}" width="{{ sh.w }}" height="{{ sh.h }}" rx="{{ sh.rx }}"></rect></sc-if>
+                        <sc-if value="{{ sh.isLine }}"><line x1="{{ sh.x1 }}" y1="{{ sh.y1 }}" x2="{{ sh.x2 }}" y2="{{ sh.y2 }}"></line></sc-if>
+                      </sc-for>
+                    </svg>
+                    <span style="flex:1;font-size:14px;font-weight:500;color:var(--ink2)">{{ i.label }}</span>
+                  </button>
+                </sc-if>
+              </sc-for>
+            </div>
+          </sc-for>
+        </nav>
+      </div>
+    </div>
+  </sc-if>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;theme&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;auto&quot;,&quot;dark&quot;,&quot;light&quot;],&quot;default&quot;:&quot;auto&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Appearance&quot;},&quot;vocabulary&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;Customer support&quot;,&quot;Companion / character&quot;,&quot;Tutoring&quot;,&quot;Sales / CRM&quot;,&quot;Community&quot;,&quot;Generic&quot;],&quot;default&quot;:&quot;Customer support&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Content&quot;},&quot;emptyWorkspace&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Content&quot;}}">
+const LEVELS = {
+  explicit:     { word: 'They said this', sure: 'Certain',        color: 'var(--a3)',   soft: 'var(--a3soft)',   fills: 3, ul: 'solid' },
+  deductive:    { word: 'Worked out',     sure: 'Almost certain', color: 'var(--a2)',   soft: 'var(--a2soft)',   fills: 2, ul: 'dashed' },
+  inductive:    { word: 'Best guess',     sure: 'Fairly sure',    color: 'var(--a1)',   soft: 'var(--a1soft)',   fills: 1, ul: 'dotted' },
+  contradiction:{ word: "Doesn't add up", sure: 'Contested',      color: 'var(--warn)', soft: 'var(--warnsoft)', fills: 0, ul: 'double' }
+};
+
+const PEOPLE = [
+  { id:1, name:'Adaeze Okonkwo', initials:'AO', tenure:'14 months', convs:'9 conversations', known:'31 things known', ago:'12m', hue:'a1', mix:[42,16,38], contra:true,  spark:'0,18 14,17 28,13 42,14 56,9 70,10 84,5 100,3' },
+  { id:2, name:'Bem Terkula',    initials:'BE', tenure:'3 months',  convs:'2 conversations', known:'8 things known',  ago:'1h',  hue:'a2', mix:[50,25,25], contra:false, spark:'0,20 14,19 28,20 42,16 56,17 70,12 84,13 100,10' },
+  { id:3, name:'Chidinma Nwosu', initials:'CN', tenure:'2 years',   convs:'24 conversations',known:'63 things known', ago:'3h',  hue:'a3', mix:[30,20,50], contra:false, spark:'0,22 14,18 28,19 42,12 56,13 70,8 84,6 100,2' },
+  { id:4, name:'Damilola Ade',   initials:'DM', tenure:'6 weeks',   convs:'1 conversation',  known:'4 things known',  ago:'5h',  hue:'a1', mix:[25,25,50], contra:false, spark:'0,21 14,21 28,20 42,20 56,18 70,19 84,16 100,15' },
+  { id:5, name:'Funke Balogun',  initials:'FK', tenure:'8 months',  convs:'6 conversations', known:'22 things known', ago:'1d',  hue:'a2', mix:[36,14,50], contra:true,  spark:'0,19 14,16 28,17 42,11 56,12 70,9 84,10 100,6' },
+  { id:6, name:'Sisi',           initials:'SI', tenure:'agent',     convs:'3,112 conversations', known:'no profile kept', ago:'now', hue:'a3', mix:[0,0,0], contra:false, isAgent:true, spark:'0,12 14,12 28,12 42,12 56,12 70,12 84,12 100,12' }
+];
+
+const P = d => ({ isPath: true, d });
+const C = (cx, cy, r) => ({ isCircle: true, cx, cy, r });
+const R = (x, y, w, h, rx) => ({ isRect: true, x, y, w, h, rx: rx || 2 });
+const LN = (x1, y1, x2, y2) => ({ isLine: true, x1, y1, x2, y2 });
+
+const ICONS = {
+  today:    [C(12, 12, 8.5), P('M12 7.5v5l3.5 2')],
+  people:   [C(12, 8, 3.6), P('M4.8 20a7.4 7.4 0 0 1 14.4 0')],
+  convs:    [P('M4 5.5h16v10.5H9.5L4.5 20V5.5z')],
+  know:     [R(4, 10, 3.6, 10, 1.4), R(10.2, 6, 3.6, 14, 1.4), R(16.4, 13.5, 3.6, 6.5, 1.4)],
+  ask:      [P('M9 9.2a3 3 0 1 1 3 3v1.8'), C(12, 17.6, 0.9)],
+  groups:   [R(3.5, 4, 7, 7, 2), R(13.5, 4, 7, 7, 2), R(3.5, 13, 7, 7, 2), R(13.5, 13, 7, 7, 2)],
+  backlog:  [R(3.5, 15, 17, 5, 1.6), R(5.5, 9.5, 13, 4, 1.4), R(7.5, 4.5, 9, 3, 1.2)],
+  settings: [LN(4, 7, 20, 7), C(9, 7, 2.2), LN(4, 13, 20, 13), C(15, 13, 2.2), LN(4, 19, 20, 19), C(10.5, 19, 2.2)],
+  dev:      [P('M8.5 8 4.5 12l4 4'), P('M15.5 8l4 4-4 4')]
+};
+
+const VOCABS = [
+  { id:'support',   name:'Customer support',    people:'People',    person:'Person',  convs:'Conversations', conv:'Conversation' },
+  { id:'companion', name:'Companion / character',people:'Users',    person:'User',    convs:'Chats',         conv:'Chat' },
+  { id:'tutoring',  name:'Tutoring',            people:'Students',  person:'Student', convs:'Lessons',       conv:'Lesson' },
+  { id:'sales',     name:'Sales / CRM',         people:'Contacts',  person:'Contact', convs:'Threads',       conv:'Thread' },
+  { id:'community', name:'Community',           people:'Members',   person:'Member',  convs:'Threads',       conv:'Thread' },
+  { id:'generic',   name:'Generic',             people:'Peers',     person:'Peer',    convs:'Sessions',      conv:'Session' }
+];
+
+const ANSWERS = {
+  default: 'Three people have raised charges in the last fortnight. Funke Balogun is the strongest — she has mentioned deposit fees in eight messages and compared you unfavourably to her bank. Bem Terkula asked once, politely, and accepted the answer. Chidinma Nwosu queried a single charge that turned out to be a duplicate, now reversed. Nothing suggests any of them is about to leave.',
+  person: 'She is waiting on a ₦52,500 reversal from 14 September and still has no CSCS number. She has raised it twice and prefers WhatsApp, so a short update there will land better than an email.'
+};
+
+class Component extends DCLogic {
+  state = {
+    screen: 'today', theme: 'dark', vocab: 'support', personId: 1,
+    q: '', ask: '', askOut: '', asking: false, answerDone: false,
+    filter: 'all', ctxOpen: false, confirmDelete: false,
+    devPath: 'GET /v2/workspaces/{workspace}/peers/{peer}/representation', devRan: false
+  };
+
+  componentDidMount() {
+    this._onResize = () => this.setState({ w: window.innerWidth });
+    window.addEventListener('resize', this._onResize);
+    this._onResize();
+    if (this.props.theme && this.props.theme !== 'auto') this.setState({ theme: this.props.theme });
+    if (this.props.vocabulary) {
+      const v = VOCABS.find(x => x.name === this.props.vocabulary);
+      if (v) this.setState({ vocab: v.id });
+    }
+  }
+  componentWillUnmount() { clearInterval(this._t); if (this._onResize) window.removeEventListener('resize', this._onResize); }
+
+  go = (screen, extra) => () => this.setState(Object.assign({ screen, confirmDelete: false, ctxOpen: false }, extra || {}));
+
+  stream(text) {
+    clearInterval(this._t);
+    const reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (reduce) { this.setState({ askOut: text, asking: false, answerDone: true }); return; }
+    const words = text.split(' ');
+    let i = 0;
+    this.setState({ askOut: '', asking: true, answerDone: false });
+    this._t = setInterval(() => {
+      i += 2;
+      this.setState({ askOut: words.slice(0, i).join(' ') });
+      if (i >= words.length) { clearInterval(this._t); this.setState({ asking: false, answerDone: true }); }
+    }, 55);
+  }
+
+  conc(text, level, meta, person, evidence) {
+    const L = LEVELS[level];
+    const cells = [0, 1, 2].map(i => ({ on: i < L.fills, off: i >= L.fills && level !== 'contradiction' }));
+    return {
+      text, meta, person, color: L.color, soft: L.soft, word: L.word, sure: L.sure, ul: L.ul,
+      isC: level === 'contradiction', level,
+      cells: level === 'contradiction' ? [] : cells,
+      dots: Array.from({ length: Math.min(evidence || 2, 6) }, (_, i) => ({ i })),
+      open: this.go('person', { personId: 1 })
+    };
+  }
+
+  allConclusions() {
+    return [
+      this.conc('Adaeze banks with GTBank.', 'explicit', 'From 2 things she said · 14 September', 'Adaeze Okonkwo', 2),
+      this.conc('Bem is saving for school fees.', 'deductive', 'Follows from 4 messages · 2 September', 'Bem Terkula', 4),
+      this.conc('Chidinma prefers to be called in the evening.', 'inductive', 'Drawn from how she writes · 9 messages', 'Chidinma Nwosu', 6),
+      this.conc("Funke's reversal both did and did not complete.", 'contradiction', 'Two messages disagree · 11 and 18 September', 'Funke Balogun', 2),
+      this.conc('Adaeze was debited ₦52,500 on 14 September for the Dangote IPO.', 'explicit', 'From 1 thing she said · 14 September', 'Adaeze Okonkwo', 1),
+      this.conc('Damilola is comparing you with a competitor.', 'inductive', 'Drawn from how he writes · 3 messages', 'Damilola Ade', 3),
+      this.conc('Chidinma has no level recorded for this yet.', 'deductive', 'Arrived without evidence — still being checked', 'Chidinma Nwosu', 1)
+    ];
+  }
+
+  renderVals() {
+    const s = this.state;
+    const V = VOCABS.find(v => v.id === s.vocab) || VOCABS[0];
+    const empty = this.props.emptyWorkspace === true;
+    const person = PEOPLE.find(p => p.id === s.personId) || PEOPLE[0];
+    const w = s.w || (typeof window !== 'undefined' ? window.innerWidth : 1280);
+    const wide = w >= 900, roomy = w >= 1080, compact = w < 620;
+    const hue = h => 'var(--' + h + ')';
+    const soft = h => 'var(--' + h + 'soft)';
+
+    const sections = {
+      today: [], 
+      people: [['people', V.people], ['convs', V.convs]],
+      person: [['people', V.people], ['convs', V.convs]],
+      convs: [['people', V.people], ['convs', V.convs]],
+      conv: [['people', V.people], ['convs', V.convs]],
+      know: [['know', 'What we know'], ['ask', 'Ask'], ['groups', 'Groups']],
+      ask: [['know', 'What we know'], ['ask', 'Ask'], ['groups', 'Groups']],
+      groups: [['know', 'What we know'], ['ask', 'Ask'], ['groups', 'Groups']],
+      backlog: [['backlog', 'Backlog'], ['settings', 'Settings'], ['dev', 'Developer']],
+      settings: [['backlog', 'Backlog'], ['settings', 'Settings'], ['dev', 'Developer']],
+      dev: [['backlog', 'Backlog'], ['settings', 'Settings'], ['dev', 'Developer']]
+    };
+    const subList = sections[s.screen] || [];
+    const SHORT = { today:'TD', people:'PE', convs:'CO', know:'KN', ask:'?', groups:'GR', backlog:'BL', settings:'ST', dev:'DV' };
+    const mk = (id, label, badge) => ({ label, short: SHORT[id] || label.slice(0,2).toUpperCase(), icon: ICONS[id] || ICONS.today, badge: badge || '', hasBadge: !!badge, on: s.screen === id || (id === 'people' && s.screen === 'person') || (id === 'convs' && s.screen === 'conv'), off: !(s.screen === id || (id === 'people' && s.screen === 'person') || (id === 'convs' && s.screen === 'conv')), go: this.go(id, { menuOpen: false }) });
+    const navGroups = [
+      { label: 'Overview', items: [mk('today', 'Today')] },
+      { label: V.people, items: [mk('people', V.people), mk('convs', V.convs)] },
+      { label: 'Intelligence', items: [mk('know', 'What we know'), mk('ask', 'Ask'), mk('groups', 'Groups')] },
+      { label: 'System', items: [mk('backlog', 'Backlog', empty ? '' : '7'), mk('settings', 'Settings'), mk('dev', 'Developer')] }
+    ];
+    const crumb = { today:'Today', people:V.people, person:V.people + ' · ' + person.name, convs:V.convs, conv:V.convs + ' · ticket-8830', know:'What we know', ask:'Ask', groups:'Groups', backlog:'Backlog', settings:'Settings', dev:'Developer' }[s.screen] || '';
+    const primaryOf = { today:'today', people:'people', person:'people', convs:'people', conv:'people', know:'knowledge', ask:'knowledge', groups:'knowledge', backlog:'system', settings:'system', dev:'system' };
+    const active = primaryOf[s.screen];
+    const nav = [
+      { key:'today', label:'Today', first:'today' },
+      { key:'people', label:V.people, first:'people' },
+      { key:'knowledge', label:'Knowledge', first:'know' },
+      { key:'system', label:'System', first:'backlog' }
+    ].map(t => ({ label:t.label, on: active === t.key, off: active !== t.key, go: this.go(t.first) }));
+
+    const sub = subList.map(([id, label]) => ({ label, on: s.screen === id || (s.screen === 'person' && id === 'people') || (s.screen === 'conv' && id === 'convs'), off: !(s.screen === id || (s.screen === 'person' && id === 'people') || (s.screen === 'conv' && id === 'convs')), go: this.go(id) }));
+
+    const subHint = { people:'1,284 in total', convs:'3,907 in total', person:'updated 12 minutes ago', conv:'read 2 hours ago', know:'114 conclusions', ask:'answers from 3,907 threads', groups:'4 groups', backlog:'7 waiting', settings:'self-hosted · v2.4', dev:'55 endpoints' }[s.screen] || '';
+
+    const seriesRaw = [[2,1,3],[3,2,4],[1,1,2],[4,2,5],[5,3,6],[2,2,3],[3,1,5],[6,3,7],[4,3,5],[2,1,3],[3,2,5],[7,4,6],[5,3,6],[4,2,5]];
+    const labels = ['7','8','9','10','11','12','13','14','15','16','17','18','19','20'];
+    const series = seriesRaw.map((v, i) => ({
+      label: labels[i], title: labels[i] + ' Sept · ' + (v[0]+v[1]+v[2]) + ' learned',
+      h1: (v[0] * 8) + 'px', h2: (v[1] * 8) + 'px', h3: (v[2] * 8) + 'px'
+    }));
+
+    const mix = [
+      { word:'They said it', n:41, w:'36%', color:'var(--a3)', title:'41 explicit' },
+      { word:'Worked out',   n:18, w:'16%', color:'var(--a2)', title:'18 deductive' },
+      { word:'Best guesses', n:52, w:'45%', color:'var(--a1)', title:'52 inductive' },
+      { word:"Doesn't add up", n:3, w:'3%',  color:'var(--warn)', title:'3 contradictions' }
+    ];
+
+    const topics = [
+      { name:'Money and charges', n:38, w:'100%', color:'var(--a1)' },
+      { name:'What they want',    n:22, w:'58%',  color:'var(--a2)' },
+      { name:'Complaints',        n:19, w:'50%',  color:'var(--warn)' },
+      { name:'How to reach them', n:17, w:'45%',  color:'var(--a3)' },
+      { name:'Life events',       n:11, w:'29%',  color:'var(--a2)' }
+    ];
+
+    const stats = [
+      { label:'People',          value: empty ? '0' : '1,284', sub:'being tracked',        delta:'+18', deltaColor:'var(--a3)', spark:'0,20 16,18 32,15 48,14 64,9 80,4' },
+      { label:'Conversations',   value: empty ? '0' : '3,907', sub:'read so far',          delta:'+142', deltaColor:'var(--a3)', spark:'0,22 16,19 32,17 48,11 64,8 80,3' },
+      { label:'Things we know',  value: empty ? '0' : '114',   sub:'across everyone',      delta:'+9',  deltaColor:'var(--a2)', spark:'0,18 16,17 32,12 48,13 64,7 80,5' },
+      { label:'Still to read',   value: empty ? '0' : '7',     sub:'about 40s behind',     delta:'−24', deltaColor:'var(--a1)', spark:'0,4 16,9 32,7 48,14 64,16 80,20' }
+    ];
+
+    const all = this.allConclusions();
+    const filterMap = { all:null, explicit:'explicit', deductive:'deductive', inductive:'inductive', contradiction:'contradiction' };
+    const knowList = s.filter === 'all' ? all : all.filter(c => c.level === filterMap[s.filter]);
+    const filters = [
+      { id:'all', label:'Everything 114' }, { id:'explicit', label:'They said it 41' },
+      { id:'deductive', label:'Worked out 18' }, { id:'inductive', label:'Best guesses 52' },
+      { id:'contradiction', label:"Doesn't add up 3" }
+    ].map(f => ({ label:f.label, on: s.filter === f.id, off: s.filter !== f.id, go: () => this.setState({ filter: f.id }) }));
+
+    const convs = [
+      { title:'Dangote IPO allocation missing', who:'Adaeze Okonkwo', ref:'ticket-8830', ago:'2h', took:'4 things learned', p:0, pending:true },
+      { title:'Card declined at checkout',      who:'Bem Terkula',    ref:'ticket-8829', ago:'3h', took:'2 things learned', p:1 },
+      { title:'Wants to close a locked plan',   who:'Chidinma Nwosu', ref:'ticket-8821', ago:'5h', took:'5 things learned', p:2 },
+      { title:'Asking how referrals pay out',   who:'Damilola Ade',   ref:'ticket-8814', ago:'9h', took:'1 thing learned',  p:3 },
+      { title:'Reversal still not received',    who:'Funke Balogun',  ref:'ticket-8799', ago:'1d', took:'3 things learned', p:4 }
+    ].map(c => { const pp = PEOPLE[c.p]; return Object.assign({}, c, { initials: pp.initials, color: hue(pp.hue), soft: soft(pp.hue), open: this.go('conv') }); });
+
+    const messages = [
+      { who:'Adaeze', initials:'AO', time:'09:12', isHuman:true, color:hue('a1'), soft:soft('a1'), text:'I paid for the Dangote IPO on the 14th and nothing has shown up.' },
+      { who:'Sisi', initials:'SI', time:'09:12', isAgent:true, text:'Sorry about that — I can see the ₦52,500 debit on 14 September. Let me check the allocation.' },
+      { who:'Adaeze', initials:'AO', time:'09:14', isHuman:true, color:hue('a1'), soft:soft('a1'), text:"Also I still don't have a CSCS number." },
+      { who:'Sisi', initials:'SI', time:'09:15', isAgent:true, text:"Your CSCS number is created automatically once the stock setup completes. I'll confirm both and come back." }
+    ];
+
+    const endpointsRaw = [
+      ['GET','/v2/workspaces'],['POST','/v2/workspaces'],['GET','/v2/workspaces/{w}/peers'],
+      ['POST','/v2/workspaces/{w}/peers'],['GET','/v2/workspaces/{w}/peers/{p}'],
+      ['GET','/v2/workspaces/{w}/peers/{p}/representation'],['POST','/v2/workspaces/{w}/peers/{p}/chat'],
+      ['GET','/v2/workspaces/{w}/sessions'],['POST','/v2/workspaces/{w}/sessions'],
+      ['GET','/v2/workspaces/{w}/sessions/{s}/messages'],['POST','/v2/workspaces/{w}/sessions/{s}/messages'],
+      ['GET','/v2/workspaces/{w}/sessions/{s}/context'],['POST','/v2/workspaces/{w}/dialectic'],
+      ['GET','/v2/workspaces/{w}/deriver/status'],['POST','/v2/workspaces/{w}/peers/{p}/dream'],
+      ['DELETE','/v2/workspaces/{w}/sessions/{s}'],['GET','/v2/health']
+    ];
+    const mcolor = m => m === 'GET' ? 'var(--a3)' : m === 'DELETE' ? 'var(--warn)' : 'var(--a2)';
+    const endpoints = endpointsRaw
+      .filter(e => !s.q || (e[0] + ' ' + e[1]).toLowerCase().includes(s.q.toLowerCase()))
+      .map(e => ({ method:e[0], path:e[1], color:mcolor(e[0]), go: () => this.setState({ devPath: e[0] + ' ' + e[1], devRan:false }) }));
+    const selParts = s.devPath.split(' ');
+
+    const devOut = s.devRan
+      ? '{\n  "peer_id": "adaeze-okonkwo",\n  "representation": {\n    "explicit": 12,\n    "deductive": 5,\n    "inductive": 13,\n    "contradictions": 1\n  },\n  "peer_card": "Customer of 14 months. Banks with GTBank…",\n  "updated_at": "2026-09-20T09:41:12Z"\n}'
+      : 'Send the request to see a response.';
+
+    return {
+      theme: s.theme, workspace: 'acme-support', q: s.q, ask: s.ask, askOut: s.askOut, asking: s.asking,
+      answerDone: s.answerDone, hasAnswer: !!s.askOut || s.asking,
+      setQ: e => this.setState({ q: e.target.value }),
+      setAsk: e => this.setState({ ask: e.target.value }),
+      askKey: e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); this.stream(s.screen === 'person' ? ANSWERS.person : ANSWERS.default); } },
+      runAsk: () => this.stream(s.screen === 'person' ? ANSWERS.person : ANSWERS.default),
+      toggleTheme: () => this.setState({ theme: s.theme === 'dark' ? 'light' : 'dark' }),
+      toggleWs: () => {}, stop: e => e.stopPropagation(),
+      toggleCtx: () => this.setState({ ctxOpen: !s.ctxOpen }),
+      ctxOpen: s.ctxOpen,
+      askDelete: () => this.setState({ confirmDelete: !s.confirmDelete }),
+      confirmDelete: s.confirmDelete,
+      nav, sub, hasSub: subList.length > 0, subHint,
+      navGroups, crumb,
+      showSide: wide && !s.railed, showRail: wide && s.railed, showMenuBtn: !wide,
+      toggleRail: () => this.setState({ railed: !s.railed }), showCrumb: wide,
+      drawerOpen: !wide && s.menuOpen === true,
+      toggleMenu: () => this.setState({ menuOpen: !s.menuOpen }),
+      showChrome: !compact, showHint: wide, showTableHead: roomy, showSpark: roomy,
+      isToday: s.screen==='today', isPeople: s.screen==='people', isPerson: s.screen==='person',
+      isConvs: s.screen==='convs', isConv: s.screen==='conv', isKnow: s.screen==='know',
+      isAsk: s.screen==='ask', isGroups: s.screen==='groups', isBacklog: s.screen==='backlog',
+      isSettings: s.screen==='settings', isDev: s.screen==='dev',
+      isEmptyWs: empty, hasData: !empty,
+      goAsk: this.go('ask'), goBacklog: this.go('backlog'), goKnow: this.go('know'),
+      goPeople: this.go('people'), goConvs: this.go('convs'), goDev: this.go('dev'),
+      goContra: this.go('know', { filter: 'contradiction' }),
+      goAskPerson: () => { this.setState({ ask: 'What does she need?' }); this.stream(ANSWERS.person); },
+      vPeople: V.people, vPeopleLower: V.people.toLowerCase(), vConvs: V.convs,
+      vConvsLower: V.convs.toLowerCase(), vConvLower: V.conv.toLowerCase(),
+      wide, roomy,
+      todayCols: wide ? 'minmax(0,1.65fr) minmax(0,1fr)' : 'minmax(0,1fr)',
+      personCols: wide ? 'minmax(0,1.5fr) minmax(0,1fr)' : 'minmax(0,1fr)',
+      peopleCols: roomy ? 'minmax(0,2fr) minmax(0,1.6fr) minmax(0,1fr) 70px' : (wide ? 'minmax(0,2fr) minmax(0,1.4fr) 60px' : 'minmax(0,1fr)'),
+      devCols: wide ? 'minmax(0,1fr) minmax(0,1.5fr)' : 'minmax(0,1fr)',
+      contraCols: 'repeat(auto-fit,minmax(180px,1fr))',
+      stats, series, mix, topics,
+      levelKey: [
+        { word:'They said it', color:'var(--a3)' },
+        { word:'Worked out',   color:'var(--a2)' },
+        { word:'Best guess',   color:'var(--a1)' }
+      ],
+      recent: all.slice(0, 3),
+      knowList,
+      topicChips: topics.map(t => ({ name: t.name, n: t.n })),
+      filters,
+      newest: PEOPLE.slice(0, 4).map(p => ({ name:p.name, initials:p.initials, ago:p.ago, color:hue(p.hue), soft:soft(p.hue), open: this.go('person', { personId: p.id }) })),
+      peopleCount: (empty ? '0' : '1,284') + ' in total',
+      people: PEOPLE.filter(p => !s.q || p.name.toLowerCase().includes(s.q.toLowerCase())).map(p => ({
+        name:p.name, initials:p.initials, tenure:p.tenure, convs:p.convs, known:p.known, ago:p.ago,
+        isAgent: !!p.isAgent, contra: p.contra, spark: p.spark, color: hue(p.hue), soft: soft(p.hue),
+        mix: [{ w:p.mix[0]+'%', color:'var(--a3)' }, { w:p.mix[1]+'%', color:'var(--a2)' }, { w:p.mix[2]+'%', color:'var(--a1)' }],
+        open: this.go('person', { personId: p.id })
+      })),
+      person: { name:person.name, first:person.name.split(' ')[0], initials:person.initials, tenure:person.tenure, convs:person.convs, known:person.known, color:hue(person.hue), soft:soft(person.hue) },
+      personConclusions: all.slice(0, 4),
+      personConvs: [
+        { title:'Dangote IPO allocation missing', ref:'ticket-8830', ago:'2h', open: this.go('conv') },
+        { title:'Reversal still not received',    ref:'ticket-8719', ago:'6d', open: this.go('conv') },
+        { title:'Changing her phone number',      ref:'ticket-8402', ago:'3w', open: this.go('conv') }
+      ],
+      growth: '0,86 20,82 42,78 66,70 88,68 110,58 132,52 156,44 178,38 200,26 224,20 248,10',
+      convs, messages,
+      participants: [
+        { name:'Adaeze Okonkwo', initials:'AO', role:'customer', isHuman:true, color:hue('a1'), soft:soft('a1') },
+        { name:'Sisi', initials:'SI', role:'AI agent', isAgent:true }
+      ],
+      convConclusions: [all[4], all[0]],
+      suggestions: [
+        { text:'Who is about to churn?', go: () => { this.setState({ ask:'Who is about to churn?' }); this.stream(ANSWERS.default); } },
+        { text:'What changed today?',    go: () => { this.setState({ ask:'What changed today?' }); this.stream(ANSWERS.default); } },
+        { text:'Who mentioned fees?',    go: () => { this.setState({ ask:'Who mentioned fees?' }); this.stream(ANSWERS.default); } }
+      ],
+      sources: [
+        { text:'Funke Balogun · 8 messages', color:'var(--a3)' },
+        { text:'Bem Terkula · 1 message', color:'var(--a2)' },
+        { text:'Chidinma Nwosu · 2 messages', color:'var(--a1)' }
+      ],
+      groups: [
+        { name:'Billing disputes', desc:'Every thread where a charge was questioned.', count:'218 threads', state:'fully read', pct:'100%', color:'var(--a3)', ready:true },
+        { name:'Churn risk',       desc:'Threads mentioning leaving or comparing us.', count:'64 threads', state:'fully read', pct:'100%', color:'var(--a3)', ready:true },
+        { name:'IPO allocations',  desc:'Opened this morning, still being read.',      count:'12 of 91 threads', state:'13% read', pct:'13%', color:'var(--a1)', indexing:true },
+        { name:'VIP accounts',     desc:'Nothing added yet — will answer with nothing.', count:'0 threads', state:'empty', pct:'2%', color:'var(--line2)', indexing:true }
+      ],
+      backlog: [12,18,25,31,28,22,19,24,17,14,20,26,23,18,15,11,16,13,9,12,8,10,9,7].map((v, i) => ({
+        h: (v * 4) + 'px', color: v > 24 ? 'var(--a1)' : 'var(--a2)', title: (24 - i) + 'h ago · ' + v + ' waiting'
+      })),
+      queue: [
+        { title:'Dangote IPO allocation missing', what:'reading 2 new messages', wait:'8s',  color:'var(--a1)' },
+        { title:'Card declined at checkout',      what:'working out what follows', wait:'22s', color:'var(--a2)' },
+        { title:'Tidy-up · Chidinma Nwosu',       what:'merging 63 things known',  wait:'1m',  color:'var(--a2)' },
+        { title:'Reversal still not received',    what:'checking a disagreement',  wait:'2m',  color:'var(--warn)' }
+      ],
+      vocabs: VOCABS.map(v => ({ name:v.name, words: v.people + ' · ' + v.convs, on: v.id === s.vocab, off: v.id !== s.vocab, go: () => this.setState({ vocab: v.id }) })),
+      themes: [
+        { label:'Light', on: s.theme === 'light', off: s.theme !== 'light', go: () => this.setState({ theme:'light' }) },
+        { label:'Dark',  on: s.theme === 'dark',  off: s.theme !== 'dark',  go: () => this.setState({ theme:'dark' }) }
+      ],
+      keys: [
+        { value:'hk_live_8f2c••••••••••••4a71', meta:'created 3 Aug · last used 2m ago' },
+        { value:'hk_live_1d90••••••••••••b3e2', meta:'created 14 Jun · last used 6d ago' },
+        { value:'https://acme.example/hooks/honcho', meta:'webhook · 4 events' }
+      ],
+      endpoints, sel: { method: selParts[0], path: selParts.slice(1).join(' ') },
+      runReq: () => this.setState({ devRan: true }), devOut,
+      health: [
+        { label:'api 41ms', color:'var(--a3)' },
+        { label:'deriver ok', color:'var(--a3)' },
+        { label:'queue 7', color:'var(--a1)' }
+      ],
+      reqLog: [
+        { method:'GET',  path:'/v2/workspaces/acme/peers/adaeze/representation', status:'200', ms:'41ms', color:'var(--a3)', statusColor:'var(--a3)' },
+        { method:'POST', path:'/v2/workspaces/acme/dialectic',                   status:'200', ms:'812ms', color:'var(--a2)', statusColor:'var(--a3)' },
+        { method:'GET',  path:'/v2/workspaces/acme/deriver/status',              status:'200', ms:'18ms', color:'var(--a3)', statusColor:'var(--a3)' },
+        { method:'POST', path:'/v2/workspaces/acme/sessions/8830/messages',      status:'422', ms:'63ms', color:'var(--a2)', statusColor:'var(--warn)' }
+      ]
+    };
+  }
+}
+
+</script>
+</body>
+</html>
