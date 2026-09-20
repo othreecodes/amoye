@@ -8,3 +8,7 @@ shots/
 
 # screenshot output from ops/shot.mjs
 docs/img/*.tmp.png
+
+# python bytecode from running ops/ scripts
+__pycache__/
+*.pyc
