@@ -9,7 +9,7 @@ import {
 import { Icon } from "@/design/icons";
 import { LEVELS, LEVEL_ORDER, type Level } from "@/design/levels";
 import { call, type Conclusion, type Page as ApiPage, type Peer, type QueueStatus, type Session } from "@/lib/api";
-import { asList, countLevels, dedupeBeliefs, toBelief } from "@/lib/model";
+import { asList, countLevels, dedupeBeliefs, onePerspective, toBelief } from "@/lib/model";
 import { useApp } from "@/lib/app-state";
 import { useAsync, usePoll } from "@/hooks/use-async";
 import { ago, num } from "@/lib/format";
@@ -137,7 +137,7 @@ export default function Today() {
 
   const peerRows = asList<Peer>(peers.data);
   const sessionRows = asList<Session>(sessions.data);
-  const conclusionRows = asList<Conclusion>(conclusions.data);
+  const conclusionRows = onePerspective(asList<Conclusion>(conclusions.data));
 
   const beliefs: Belief[] = React.useMemo(
     // Same renaming as the other screens: the id belongs in the link, the

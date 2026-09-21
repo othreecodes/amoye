@@ -11,7 +11,7 @@ import { Icon } from "@/design/icons";
 import { cn } from "@/lib/utils";
 import { useApp } from "@/lib/app-state";
 import { bucketOf, num } from "@/lib/format";
-import { asList, countLevels, dedupeBeliefs, toBelief } from "@/lib/model";
+import { asList, countLevels, dedupeBeliefs, onePerspective, toBelief } from "@/lib/model";
 import { usePeerNames } from "@/hooks/use-peer-names";
 import { Disagreement } from "@/components/disagreement";
 import { useAsync } from "@/hooks/use-async";
@@ -64,7 +64,8 @@ async function loadAll(workspace: string, newestFirst: boolean): Promise<Loaded>
     if (batch.length < PAGE_SIZE) break;
     if (typeof pages === "number" && p >= pages) break;
   }
-  return { items: out, total, capped: total !== null && out.length < total };
+  const kept = onePerspective(out);
+  return { items: kept, total, capped: total !== null && out.length < total };
 }
 
 async function search(workspace: string, query: string): Promise<Conclusion[]> {

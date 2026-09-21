@@ -11,7 +11,7 @@ import { useAsync } from "@/hooks/use-async";
 import { ApiError, call, stream, type Conclusion, type Page, type Session } from "@/lib/api";
 import { useApp } from "@/lib/app-state";
 import { ago, num } from "@/lib/format";
-import { asList, beliefsFromRepresentation, countLevels, dedupeBeliefs, toBelief } from "@/lib/model";
+import { asList, beliefsFromRepresentation, countLevels, dedupeBeliefs, onePerspective, toBelief } from "@/lib/model";
 import { buildAttributor } from "@/lib/attribution";
 import { usePeerNames } from "@/hooks/use-peer-names";
 import { displayName, firstName } from "@/lib/peer-names";
@@ -206,7 +206,7 @@ export default function Person() {
       items = [];
     }
     // A server that ignores the filter hands back the whole workspace.
-    const mine = items.filter((c) => observedOf(c) === personId);
+    const mine = onePerspective(items.filter((c) => observedOf(c) === personId));
     const scoped = mine.length ? mine : items.filter((c) => !observedOf(c));
 
     const rawStamp = new Map<string, string>(

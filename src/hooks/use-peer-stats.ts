@@ -30,6 +30,20 @@ export type PeerStats = {
 
 const EMPTY: PeerStats = { by: new Map(), loading: true, complete: false, counted: 0 };
 
+/** The agent's view of a person where it exists, their own where it does
+ *  not — the same choice the screens make, so the numbers agree. */
+function resolve(
+  tally: ReadonlyMap<string, { agent: number; agentContra: number; self: number; selfContra: number }>,
+): Map<string, PeerStat> {
+  const by = new Map<string, PeerStat>();
+  for (const [who, t] of tally) {
+    by.set(who, t.agent > 0
+      ? { known: t.agent, contradictions: t.agentContra }
+      : { known: t.self, contradictions: t.selfContra });
+  }
+  return by;
+}
+
 export function usePeerStats(): PeerStats {
   const { workspace } = useApp();
   const [state, setState] = React.useState<PeerStats>(EMPTY);
@@ -39,7 +53,7 @@ export function usePeerStats(): PeerStats {
     setState(EMPTY);
     void (async () => {
       const ws = encodeURIComponent(workspace);
-      const by = new Map<string, PeerStat>();
+      const tally = new Map<string, { agent: number; agentContra: number; self: number; selfContra: number }>();
       let counted = 0;
       let complete = true;
       for (let page = 1; page <= MAX_PAGES; page += 1) {
@@ -55,10 +69,15 @@ export function usePeerStats(): PeerStats {
           for (const c of batch) {
             const who = String(c.observed_id ?? c.observed ?? "");
             if (!who) continue;
-            const cur = by.get(who) ?? { known: 0, contradictions: 0 };
-            cur.known += 1;
-            if (String(c.level ?? "") === "contradiction") cur.contradictions += 1;
-            by.set(who, cur);
+            // Tally the two perspectives apart and choose between them at the
+            // end. Deciding per page would keep both for anyone whose two
+            // views straddle a page boundary, which is most people.
+            const mine = String(c.observer_id ?? c.observer ?? "") === who;
+            const cur = tally.get(who) ?? { agent: 0, agentContra: 0, self: 0, selfContra: 0 };
+            const contra = String(c.level ?? "") === "contradiction";
+            if (mine) { cur.self += 1; if (contra) cur.selfContra += 1; }
+            else { cur.agent += 1; if (contra) cur.agentContra += 1; }
+            tally.set(who, cur);
           }
           counted += batch.length;
           if (batch.length < PAGE) break;
@@ -70,9 +89,9 @@ export function usePeerStats(): PeerStats {
         }
         // Publish as it goes: the table is usable before the sweep finishes.
         if (!live) return;
-        setState({ by: new Map(by), loading: true, complete: false, counted });
+        setState({ by: resolve(tally), loading: true, complete: false, counted });
       }
-      if (live) setState({ by, loading: false, complete, counted });
+      if (live) setState({ by: resolve(tally), loading: false, complete, counted });
     })();
     return () => { live = false; };
   }, [workspace]);

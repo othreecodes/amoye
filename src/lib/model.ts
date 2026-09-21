@@ -42,6 +42,38 @@ function sentence(s: string): string {
  * sentence is one thing we know. The first copy wins, and since the list
  * arrives newest-first that is the most recent phrasing.
  */
+/**
+ * One perspective per person.
+ *
+ * Honcho keeps a separate collection for every (observer, observed) pair, so
+ * each customer is described twice: once as the agent sees them, once as they
+ * see themselves. Both are dreamt over separately, and the two dreams word
+ * their conclusions differently — so the derived claims cannot be collapsed
+ * by text the way the identical explicit ones can. Merged, a person appears
+ * to know twice as much as they do, and the same guess is listed twice in
+ * slightly different words. It grows by two sets every dream cycle.
+ *
+ * The agent's view is the one a support console is asking about, so it wins
+ * where it exists. Where it does not — an agent's own page, or a peer nobody
+ * else has observed — the self-observed view is all there is, and dropping it
+ * would empty the screen.
+ */
+export function onePerspective<T extends Record<string, unknown>>(items: T[]): T[] {
+  const observedOf = (c: T) => String(c.observed_id ?? c.observed ?? "");
+  const observerOf = (c: T) => String(c.observer_id ?? c.observer ?? "");
+
+  const hasOtherView = new Set<string>();
+  for (const c of items) {
+    const observed = observedOf(c);
+    if (observed && observerOf(c) !== observed) hasOtherView.add(observed);
+  }
+  return items.filter((c) => {
+    const observed = observedOf(c);
+    if (!hasOtherView.has(observed)) return true;
+    return observerOf(c) !== observed;
+  });
+}
+
 export function dedupeBeliefs(bs: Belief[]): Belief[] {
   const seen = new Set<string>();
   const out: Belief[] = [];
